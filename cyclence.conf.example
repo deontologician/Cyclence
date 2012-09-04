@@ -1,0 +1,2 @@
+export CYCLENCE_TORNADO_PORT 8888
+export CYCLENCE_COOKIE_SECRET 'secret here'
