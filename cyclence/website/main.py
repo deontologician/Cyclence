@@ -3,6 +3,8 @@ from __future__ import print_function
 import os
 import os.path
 from base64 import urlsafe_b64decode as b64decode
+from uuid import uuid4
+from datetime import date, datetime
 
 from tornado import ioloop, web, auth, escape
 from sqlalchemy import create_engine
@@ -40,7 +42,7 @@ class BaseHandler(web.RequestHandler):
         email = self.get_secure_cookie('user')
         if not email:
             return None
-        return self.session.query(User).filter(User.email == email).one()
+        return self.session.query(User).filter(User.email == email).first()
 
 
 class MainHandler(BaseHandler):
@@ -48,7 +50,7 @@ class MainHandler(BaseHandler):
         if not self.current_user:
             self.render('logged_out.html')
         else:
-            self.render('main_page.html', user=self.current_user)
+            self.render('main_page.html', user=self.current_user, today=date.today())
 
 class GoogleHandler(BaseHandler, auth.GoogleMixin):
     @web.asynchronous
@@ -62,7 +64,7 @@ class GoogleHandler(BaseHandler, auth.GoogleMixin):
         if not user:
             raise web.HTTPError(500, "Google auth failed")
         self.set_secure_cookie('user', user['email'])
-        if not self.session.query(User).filter_by(email=user['email']).one():
+        if not self.session.query(User).filter_by(email=user['email']).first():
             usr = User(email=user['email'],
                        name=user.get('name'),
                        firstname=user.get('first_name'),
@@ -87,7 +89,22 @@ class TaskHandler(BaseHandler):
 
     @web.authenticated
     def post(self):
-        pass
+        name = self.get_argument("taskname")
+        length = int(self.get_argument("length"))
+        first_due = datetime.strptime(self.get_argument("firstdue"), '%m/%d/%Y').date()
+        allow_early = self.get_argument("allow_early", "false") == "true"
+        points = int(self.get_argument("points", "100"))
+        decay_length = length
+        tags = self.get_argument("tags", '').split(" ")
+        notes = self.get_argument("notes", None)
+        if tags == ['']:
+            tags = None
+        t = Task(name, length, first_due, allow_early, points, decay_length, 
+                 tags, notes)
+        t.user_email = self.current_user.email
+        self.current_user.tasks.append(t)
+        self.session.commit()
+        self.redirect('/tasks')
 
 if __name__ == '__main__':
     CyclenceApp().listen(int(os.getenv('CYCLENCE_TORNADO_PORT')))

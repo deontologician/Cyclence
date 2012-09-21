@@ -1,14 +1,14 @@
 """This module includes much of the core functionality of Cyclence."""
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from itertools import count
 from math import ceil
 from uuid import uuid4
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, INTERVAL
 from sqlalchemy.orm import relationship, backref
-from sqlalchemy import (Column, Integer, String, Boolean, DateTime, ForeignKey)
+from sqlalchemy import (Column, Integer, String, Boolean, Date, DateTime, ForeignKey)
 
 CyclenceBase = declarative_base()
 
@@ -23,11 +23,11 @@ class Task(CyclenceBase):
     task_id = Column(UUID, primary_key=True)
     user_email = Column(String, ForeignKey('users.email'))
     name = Column(String)
-    length = Column(Integer)
-    first_due = Column(DateTime, nullable=True)
+    length = Column(INTERVAL)
+    first_due = Column(Date, nullable=True)
     allow_early = Column(Boolean)
     points = Column(Integer)
-    decay_length = Column(Integer)
+    decay_length = Column(INTERVAL)
     notes = Column(String)
 
     user = relationship('User', backref='tasks')
@@ -46,7 +46,7 @@ class Task(CyclenceBase):
         `tags` are user defined tags for this task
         `notes` is any notes associated with this task
         """
-        self.task_id = uuid4()
+        self.task_id = str(uuid4())
         self.name = name
         self.length = length if type(length) is timedelta else timedelta(length)
         self.allow_early = allow_early
@@ -129,8 +129,8 @@ class Task(CyclenceBase):
     def last_completed(self):
         '''Returns the last time the task was completed. If the task has never
         been completed, returns None'''
-        if self.completion_history:
-            return self.completion_history[-1].completed_on
+        if self.completions:
+            return self.completions[-1].completed_on
         else:
             return None
 
@@ -159,7 +159,7 @@ class Completion(CyclenceBase):
     __tablename__ = 'completions'
     
     task_id = Column(UUID, ForeignKey('tasks.task_id'), primary_key=True)
-    completed_on = Column(DateTime, primary_key=True)
+    completed_on = Column(Date, primary_key=True)
     points_earned = Column(Integer)
     recorded_on = Column(DateTime)
     days_late = Column(Integer)

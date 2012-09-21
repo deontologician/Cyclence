@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>Cyclence</title>
+    <link rel="stylesheet" href="{{ static_url('css/bootstrap.min.css') }}" 
+          type="text/css" media="screen" />
+    <link rel="stylesheet" href="{{ static_url('css/cyclence.css') }}" 
+          type="text/css" media="screen" />
+    <link rel="stylesheet" href="{{ static_url('css/datepicker.css') }}"
+  </head>
+  <body>
+    <script type="text/javascript" 
+            src="{{ static_url('js/jquery-1.8.1.min.js') }}"></script>
+    <script type="text/javascript" 
+            src="{{ static_url('js/bootstrap-datepicker.js') }}"></script>
+    <div class="container">
+      <div class="row">
+        <div class="span9">
+          <h1>Tasks</h1>
+          <a href="/">Main</a>
+        </div>
+      </div>
+      <div class="row">
+        {% for task in user.tasks %}
+        <div class="span3">
+          <dl>
+            <dt>Task</dt>
+            <dd>{{ task.name }}</dd>
+            <dt>Recurs every</dt>
+            <dd>{{task.length.days}} days</dd>
+            <dt>Next due</dt>
+            <dd>{{task.duedate}}</dd>
+            <dt>Last completed</dt>
+            <dd>{{task.last_completed or "never"}}</dd>
+            <dt>points</dt>
+            <dd>{{task.points}}</dd>
+            <dt>Dueity</dt>
+            <dd>{{task.dueity}}</dd>
+          </dl>
+        </div>
+        {% end %}
+      </div>
+    </div>
+  </body>
+</html>
