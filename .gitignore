@@ -1,4 +1,7 @@
 ideas.org
+todo.org
 cyclence.conf
 *.pyc
 __pycache__/*
+.#*
+*.zip

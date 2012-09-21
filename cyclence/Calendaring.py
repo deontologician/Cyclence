@@ -2,7 +2,6 @@
 
 from datetime import date, timedelta
 from itertools import count
-from collections import namedtuple
 from math import ceil
 from uuid import uuid4
 
@@ -17,11 +16,12 @@ DUE = 'due'
 OVERDUE = 'overdue'
 NOT_DUE = 'not due'
 
-class RecurringTask(CyclenceBase):
+class Task(CyclenceBase):
     "Represents a recurring task."
 
-    __tablename__ = "recurring_tasks"
+    __tablename__ = "tasks"
     task_id = Column(UUID, primary_key=True)
+    user_email = Column(String, ForeignKey('users.email'))
     name = Column(String)
     length = Column(Integer)
     first_due = Column(DateTime, nullable=True)
@@ -29,6 +29,8 @@ class RecurringTask(CyclenceBase):
     points = Column(Integer)
     decay_length = Column(Integer)
     notes = Column(String)
+
+    user = relationship('User', backref='tasks')
 
     def __init__(self, name, length, first_due=None, allow_early=True,
                  points=100, decay_length=None, tags=None, notes=None):
@@ -65,9 +67,6 @@ class RecurringTask(CyclenceBase):
             self.first_due = first_due
             
         self.notes = notes
-            
-        #Internal state setup
-        self.completion_history = []
 
     @property
     def dueity(self):
@@ -76,26 +75,26 @@ class RecurringTask(CyclenceBase):
         today = date.today()
         duedate = self.duedate
         if duedate < today:
-            return RecurringTask.OVERDUE
+            return OVERDUE
         elif duedate > today:
-            return RecurringTask.NOT_DUE
+            return NOT_DUE
         else:
-            return RecurringTask.DUE
+            return DUE
 
     @property
     def is_due(self):
         '''Whether this task is due'''
-        return self.dueity == RecurringTask.DUE
+        return self.dueity == DUE
             
     @property
     def is_overdue(self):
         '''Whether this task is overdue'''
-        return self.dueity == RecurringTask.OVERDUE
+        return self.dueity == OVERDUE
     
     @property
     def is_not_due(self):
         '''Whether this task is not due yet'''
-        return self.dueity == RecurringTask.NOT_DUE
+        return self.dueity == NOT_DUE
 
 
     def complete(self, completed_on = None):
@@ -112,12 +111,11 @@ class RecurringTask(CyclenceBase):
                                        "not allowed to be completed early.".
                                        format(date_str(self.duedate)))
         # calculate days_late, calculate points
-        points_earned = self.duedate 
-        c = CompletionRec(completed_on = completed_on,
-                          points_earned = points_earned,
-                          days_late = completed_on - self.duedate,
-                          recorded_on = today)
-        self.completion_history.append(c)
+        points_earned = self.duedate
+        self.completions.append(Completion(completed_on = completed_on,
+                                           points_earned = points_earned,
+                                           days_late = completed_on - self.duedate,
+                                           recorded_on = today))
             
 
     def __repr__(self):
@@ -160,14 +158,23 @@ class Completion(CyclenceBase):
     r'''Represents a completion of a task'''
     __tablename__ = 'completions'
     
+    task_id = Column(UUID, ForeignKey('tasks.task_id'), primary_key=True)
     completed_on = Column(DateTime, primary_key=True)
-    task_id = Column(UUID)
-CompletionRec = namedtuple('CompletionRec',
-                           ['completed_on',
-                            'points_earned',
-                            'recorded_on',
-                            'days_late',
-                            ])
+    points_earned = Column(Integer)
+    recorded_on = Column(DateTime)
+    days_late = Column(Integer)
+
+    task = relationship("Task", backref=backref("completions", order_by=completed_on))
+
+class User(CyclenceBase):
+    r'''Represents a user in the system'''
+    __tablename__ = 'users'
+    
+    email = Column(String, primary_key=True)
+    name = Column(String)
+    firstname = Column(String)
+    lastname = Column(String)
+
 
 class EarlyCompletionException(Exception):
     '''Thrown when a task is completed ahead of its due date and allow_early is

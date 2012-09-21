@@ -1,2 +1,5 @@
-export CYCLENCE_TORNADO_PORT 8888
-export CYCLENCE_COOKIE_SECRET 'secret here'
+#!/bin/bash
+export CYCLENCE_TORNADO_PORT=8888
+export CYCLENCE_COOKIE_SECRET=#example: head --bytes=32 /dev/urandom | base64
+export CYCLENCE_DEBUG=true
+export CYCLENCE_DB_CONNECTION_STRING='postgresql+psycopg2://localhost/Cyclence'
