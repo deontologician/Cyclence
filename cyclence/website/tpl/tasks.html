@@ -20,26 +20,30 @@
           <a href="/">Main</a>
         </div>
       </div>
-      <div class="row">
-        {% for task in user.tasks %}
-        <div class="span3">
-          <dl>
-            <dt>Task</dt>
-            <dd>{{ task.name }}</dd>
-            <dt>Recurs every</dt>
-            <dd>{{task.length.days}} days</dd>
-            <dt>Next due</dt>
-            <dd>{{task.duedate}}</dd>
-            <dt>Last completed</dt>
-            <dd>{{task.last_completed or "never"}}</dd>
-            <dt>points</dt>
-            <dd>{{task.points}}</dd>
-            <dt>Dueity</dt>
-            <dd>{{task.dueity}}</dd>
-          </dl>
+      <div id="main" class="row">
+        <div class="span9">
+          <table class="table">
+            <tr>
+              <th>Task</th><th>Recurs every</th><th>Due</th><th>Last Completed</th>
+              <th>Points</th>
+            </tr>
+            {% for task in user.tasks %}
+            <tr class="{{task.dueity.replace(' ', '-')}}">
+              <td>{{ task.name }}</td>
+              <td>{{task.length.days}} days</td>
+              {% if task.dueity == 'overdue' %}
+              <td>{{(today - task.duedate).days}} days ago</td>
+              {% elif task.dueity == 'due' %}
+              <td>today</today>
+              {% else %}
+              <td>{{(task.duedate - today).days}} days from now</td>
+              {% end %}
+              <td>{{task.last_completed or "never"}}</td>
+              <td>{{task.points}}</td>
+            </tr>
+            {% end %}
+          </table>
         </div>
-        {% end %}
       </div>
-    </div>
   </body>
 </html>

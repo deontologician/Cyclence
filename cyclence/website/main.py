@@ -50,7 +50,8 @@ class MainHandler(BaseHandler):
         if not self.current_user:
             self.render('logged_out.html')
         else:
-            self.render('main_page.html', user=self.current_user, today=date.today())
+            self.render('main_page.html', user=self.current_user, 
+                        today=date.today())
 
 class GoogleHandler(BaseHandler, auth.GoogleMixin):
     @web.asynchronous
@@ -85,13 +86,14 @@ class LogoutHandler(BaseHandler):
 class TaskHandler(BaseHandler):
     @web.authenticated
     def get(self):
-        self.render('tasks.html', user=self.current_user)
+        self.render('tasks.html', user=self.current_user, today=date.today())
 
     @web.authenticated
     def post(self):
         name = self.get_argument("taskname")
         length = int(self.get_argument("length"))
-        first_due = datetime.strptime(self.get_argument("firstdue"), '%m/%d/%Y').date()
+        first_due = datetime.strptime(self.get_argument("firstdue"), 
+                                      '%m/%d/%Y').date()
         allow_early = self.get_argument("allow_early", "false") == "true"
         points = int(self.get_argument("points", "100"))
         decay_length = length
