@@ -16,16 +16,5 @@ body {
 }
 .table {
     background-color: transparent;
-}
-
-.overdue {
-    color: #ff0000;
-}
-
-.due {
-    color: #00aa00;
-}
-
-.not-due {
-    color: #aaa;
+    color: black;
 }

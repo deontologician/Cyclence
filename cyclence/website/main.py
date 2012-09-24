@@ -12,26 +12,6 @@ from sqlalchemy.orm import sessionmaker
 
 from cyclence.Calendaring import User, Task, Completion
 
-class CyclenceApp(web.Application):
-    r'''Customized application for Cyclence that includes database
-    initialization'''
-    def __init__(self):
-        handlers = [(r"/", MainHandler),
-                    (r'/tasks', TaskHandler),
-                    (r"/auth/google", GoogleHandler),
-                    (r"/logout", LogoutHandler),
-                    ]
-        settings = dict(
-            cookie_secret=os.getenv('CYCLENCE_COOKIE_SECRET'),
-            login_url='/',
-            template_path='tpl',
-            debug=True if os.getenv('CYCLENCE_DEBUG') == 'true' else False,
-            static_path=os.path.join(os.path.dirname(__file__), "../../static"),
-            )
-        web.Application.__init__(self, handlers, **settings)
-        connstr = os.getenv('CYCLENCE_DB_CONNECTION_STRING')
-        self.session = sessionmaker(bind=create_engine(connstr))()
-
 class BaseHandler(web.RequestHandler):
 
     @property
@@ -44,6 +24,50 @@ class BaseHandler(web.RequestHandler):
             return None
         return self.session.query(User).filter(User.email == email).first()
 
+class CyclenceApp(web.Application):
+    r'''Customized application for Cyclence that includes database
+    initialization'''
+    def __init__(self):
+        handlers = [(r"/", MainHandler),
+                    (r'/tasks', TaskHandler),
+                    (r"/auth/google", GoogleHandler),
+                    (r"/logout", LogoutHandler),
+                    (r"/api/tasks", APITaskHandler),
+                    ]
+        settings = dict(
+            cookie_secret=os.getenv('CYCLENCE_COOKIE_SECRET'),
+            login_url='/',
+            template_path='tpl',
+            debug=True if os.getenv('CYCLENCE_DEBUG') == 'true' else False,
+            static_path=os.path.join(os.path.dirname(__file__), "../../static"),
+            )
+        web.Application.__init__(self, handlers, **settings)
+        connstr = os.getenv('CYCLENCE_DB_CONNECTION_STRING')
+        self.session = sessionmaker(bind=create_engine(connstr))()
+
+class APITaskHandler(BaseHandler):
+    '''Returns task json'''
+    @web.authenticated
+    def get(self):
+        result = []
+        for task in self.current_user.tasks:
+            t = dict(
+                id = task.task_id,
+                name = task.name,
+                length = task.length.days,
+                decay_length = task.decay_length.days,
+                duedate = task.duedate.isoformat(),
+                allow_early = task.allow_early,
+                notes = task.notes,
+                dueity = task.dueity,
+                last_completed = task.last_completed.isoformat() \
+                    if task.last_completed else None,
+                points = task.points,
+                points_today = task.point_worth(),
+                hue = task.hue()
+                )
+            result.append(t)
+        self.write({'tasks': result})
 
 class MainHandler(BaseHandler):
     def get(self):

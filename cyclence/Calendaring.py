@@ -154,6 +154,41 @@ class Task(CyclenceBase):
         for i in count(1):
             yield self.duedate + i*self.length
 
+    
+    def point_worth(self, completed_on=None):
+        '''Calculates how many points completing the task on the given date is
+        worth, given the `duedate`, when it was `completed_on`, the
+        `decay_length` and the `max_points` the task is worth'''
+        completed_on = completed_on or date.today()
+        if self.duedate >= completed_on:
+            return self.points
+        elif completed_on >= self.duedate + self.decay_length:
+            return 0
+        else:
+            days_late = (completed_on - self.duedate).days
+            points_per_day = self.points / float(self.decay_length.days)
+            return self.points - int(ceil(points_per_day * days_late))
+
+    def hue(self, completed_on=None):
+        '''A tuple representing the color that represents how overdue the item
+        is (in HSL notation). Going from green on the duedate to red when the
+        decay_length is exhausted.'''
+        hsl = '{},{}%,{}%'
+        completed_on = completed_on or date.today()
+        days_late = (completed_on - self.duedate).days
+        percent_due = (days_late / float(self.decay_length.days))
+        if days_late < 0 and not self.allow_early:
+            return hsl.format(0, 0, 75) #grey
+        elif days_late < 0 and self.allow_early:
+            #somewhere between grey and green
+            s = percent_due * 100
+            return hsl.format(120, s, 75)
+        elif days_late >= self.decay_length.days:
+            return hsl.format(0, 100, 50) #red
+        else:
+            return hsl.format(120 * (1 - percent_due), 100, 50)
+
+
 class Completion(CyclenceBase):
     r'''Represents a completion of a task'''
     __tablename__ = 'completions'
@@ -186,19 +221,6 @@ class FutureCompletionException(Exception):
     future'''
     pass
 
-def point_award(duedate, completed_on, decay_length, max_points):
-    '''Calculates how many points a completion of a task on a certain date is
-    worth, given the `duedate`, when it was `completed_on`, the `decay_length`
-    and the `max_points` the task is worth'''
-    if duedate >= completed_on:
-        return max_points
-    elif completed_on >= duedate + decay_length:
-        return 0
-    else:
-        days_late = (completed_on - duedate).days
-        points_per_day = max_points / float(decay_length.days)
-        return max_points - int(ceil(points_per_day * days_late))
-        
 def date_str(dt):
     """Returns a human readable date used throughout Cyclence to represent dates
     as strings"""
