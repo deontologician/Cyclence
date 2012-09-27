@@ -1,43 +1,70 @@
 <!DOCTYPE html>
-<html lang="en">
+<html ng-app>
   <head>
     <title>Cyclence</title>
+    <link rel="shortcut icon" href="{{ static_url('img/favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ static_url('img/favicon.png') }}">
     <link rel="stylesheet" href="{{ static_url('css/bootstrap.min.css') }}" 
           type="text/css" media="screen" />
     <link rel="stylesheet" href="{{ static_url('css/cyclence.css') }}" 
           type="text/css" media="screen" />
     <link rel="stylesheet" href="{{ static_url('css/datepicker.css') }}"
   </head>
-  <body>
-    <script type="text/javascript" 
-            src="{{ static_url('js/jquery-1.8.1.min.js') }}"></script>
-    <script type="text/javascript" 
-            src="{{ static_url('js/bootstrap-datepicker.js') }}"></script>
+  <body ng-controller="MainCtrl">
     <div class="container">
       <div class="row">
-        <div class="span9">
-          <h1>Welcome to Cyclence {{user.firstname}}</h1>
+        <div class="span4">
+          <img id="banner-michael" 
+               src="{{ static_url('img/Cyclence_Banner.png') }}" alt="Cyclence">
+        </div>
+        <div class="span3 offset5">
+          <img class="gravatar" src="{{ user.gravatar_url }}?s=30&d=retro"
+               style="border-color: hsl({{! gravatar_border }})">
+          <span id="loginname">{{ user.email }}</span> <a href="/logout">(logout)</a>
         </div>
       </div>
-      <div class="row">
-        <div class="span3 offset3"
-             <p><a href="/logout">Logout again!</a></p>
+      <div id="main" class="row">
+        <div class="span9" ng-controller="TaskCtrl">
+          <table class="table">
+            <tr>
+              <th></th>
+              <th>Task</th>
+              <th>Recurs every</th>
+              <th>Due</th>
+              <th>Last Completed</th>
+              <th>Points</th>
+            </tr>
+            <tr ng-repeat="task in tasks | orderBy:'duedate'" class="taskrow">
+              <td>
+                <div style="background-color: hsl({{! task.hue }});" 
+                     class="indicator"></div>
+              </td>
+              <td>{{! task.name }}</td>
+              <td>{{! task.length }} days</td>
+              <td>{{! task.duedate }} </td>
+              <td>{{! task.last_completed || "never" }}</td>
+              <td>{{! task.points_today }}</td>
+            </tr>
+          </table>
+        </div>
       </div>
-      <div class="row">
-        <form method="POST" action="/tasks">
+      <div class="row-fluid">
+        <form method="POST" action="/tasks" class="form-inline">
           <legend>Create a new Task</legend>
           <label>Task Name</label>
           <input type="text" name="taskname" 
                  placeholder="Walk the dog, mow the lawn, etc...">
           <label>Recurs every:
-            <input type="text" name="length" class="span1"> days
+            <input type="text" name="length"> days
           </label>
-          <label>First due</label>
-          <div class="input-append date"
-               data-date-format="dd-mm-yyyy">
-            <input class="span2" size="16" type="text" name="firstdue" id="firstdue"
-                   value="{{ today.strftime('%m/%d/%Y') }}">
-            <span class="add-on"><i class="icon-th"></i></span>
+          <div>
+            <label>First due</label>
+            <div class="input-append date"
+                 data-date-format="dd-mm-yyyy">
+              <input size="16" type="text" name="firstdue" id="firstdue"
+                     value="{{ today.strftime('%m/%d/%Y') }}">
+              <span class="add-on"><i class="icon-th"></i></span>
+            </div>
           </div>
           <label class="checkbox">
             <input type="checkbox" name="allowearly" checked="checked"> Allow early completion
@@ -46,12 +73,24 @@
           <input type="text" value="100" name="points">
           <label>Tags</label>
           <input type="text" name="tags">
-          <label>Notes</label>
-          <textarea width="80" name="notes"></textarea>
+          <div>
+            <label>Notes</label>
+            <textarea width="80" name="notes"></textarea>
+          </div>
           <button type="submit" class="btn">Submit</button>
         </form>
       </div>
     </div>
+    <script type="text/javascript" 
+            src="{{ static_url('js/jquery-1.8.1.min.js') }}"></script>
+    <script type="text/javascript" 
+            src="{{ static_url('js/bootstrap-datepicker.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('js/angular.min.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('js/angular-resource.min.js') }}"></script>
+    <script type="text/javascript"
+            src="{{ static_url('js/cyclence.js') }}"></script>
     <script>
       $(function(){
           $('#firstdue').datepicker();

@@ -4,6 +4,7 @@ from datetime import date, datetime, timedelta
 from itertools import count
 from math import ceil
 from uuid import uuid4
+from hashlib import md5
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects.postgresql import UUID, INTERVAL
@@ -209,6 +210,12 @@ class User(CyclenceBase):
     name = Column(String)
     firstname = Column(String)
     lastname = Column(String)
+    
+    @property
+    def gravatar_url(self):
+        return 'http://www.gravatar.com/avatar/{hash}'.format(
+            hash = md5(self.email).hexdigest())
+        
 
 
 class EarlyCompletionException(Exception):
