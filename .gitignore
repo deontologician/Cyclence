@@ -6,3 +6,4 @@ cyclence.conf
 .#*
 *.zip
 *angular-1.0.2*
+*.tar.gz

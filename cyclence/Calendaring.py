@@ -1,21 +1,49 @@
 """This module includes much of the core functionality of Cyclence."""
 
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from itertools import count
 from math import ceil
 from uuid import uuid4
 from hashlib import md5
 
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.dialects.postgresql import UUID, INTERVAL
-from sqlalchemy.orm import relationship, backref
-from sqlalchemy import (Column, Integer, String, Boolean, Date, DateTime, ForeignKey)
+from sqlalchemy.orm import relationship, column_property
+from sqlalchemy import (Column, Integer, String, Boolean, Date, DateTime, 
+                        ForeignKey, Table, select, func)
 
 CyclenceBase = declarative_base()
 
 DUE = 'due'
 OVERDUE = 'overdue'
 NOT_DUE = 'not due'
+
+task2tag_assoc = Table('tasktags', CyclenceBase.metadata,
+    Column('task_id', UUID, ForeignKey('tasks.task_id', ondelete='cascade'), 
+           primary_key=True),
+    Column('tag_name', String, ForeignKey('tags.tag_name', ondelete='cascade'),
+           primary_key=True)
+)
+
+class Tag(CyclenceBase):
+    '''Represents a task tag'''
+    __tablename__ = 'tags'
+
+    tag_name = Column(String, primary_key=True)
+
+    def __init__(self, tag_name):
+        self.tag_name = tag_name
+
+class Completion(CyclenceBase):
+    r'''Represents a completion of a task'''
+    __tablename__ = 'completions'
+    
+    task_id = Column(UUID, ForeignKey('tasks.task_id'), primary_key=True)
+    completed_on = Column(Date, primary_key=True)
+    points_earned = Column(Integer)
+    recorded_on = Column(DateTime)
+    days_late = Column(Integer)
 
 class Task(CyclenceBase):
     "Represents a recurring task."
@@ -31,7 +59,15 @@ class Task(CyclenceBase):
     decay_length = Column(INTERVAL)
     notes = Column(String)
 
+    last_completed = column_property(
+        select([func.max(Completion.completed_on)])
+        .where(Completion.task_id == task_id))
+
     user = relationship('User', backref='tasks')
+    _tags = relationship('Tag', secondary="tasktags", backref="tasks",
+                         collection_class=set)
+    tags = association_proxy('_tags', 'tag_name')
+    completions = relationship("Completion", lazy="dynamic", backref="task")
 
     def __init__(self, name, length, first_due=None, allow_early=True,
                  points=100, decay_length=None, tags=None, notes=None):
@@ -52,7 +88,6 @@ class Task(CyclenceBase):
         self.length = length if type(length) is timedelta else timedelta(length)
         self.allow_early = allow_early
         self.points = points
-        self.tags = set(tags) if tags else set()
 
         if decay_length is None:
             self.decay_length = self.length
@@ -66,6 +101,10 @@ class Task(CyclenceBase):
             self.first_due = date.today() + timedelta(1)
         else:
             self.first_due = first_due
+        
+        if tags:
+            for tag in tags:
+                self.tags.add(tag)
             
         self.notes = notes
 
@@ -98,26 +137,25 @@ class Task(CyclenceBase):
         return self.dueity == NOT_DUE
 
 
-    def complete(self, completed_on = None):
+    def complete(self, completed_on=None):
         '''Complete the recurring task.'''
         today = date.today()
-        if completed_on is None:
-            completed_on = today
+        completed_on = completed_on or today
 
         if completed_on > today:
             raise FutureCompletionException('The completion date cannot be in '
-                                        'the future.')
+                                            'the future.')
         if self.is_not_due and completed_on < self.duedate:
             raise EarlyCompletionException("This task isn't due until {0}, and is "
                                        "not allowed to be completed early.".
                                        format(date_str(self.duedate)))
         # calculate days_late, calculate points
-        points_earned = self.duedate
-        self.completions.append(Completion(completed_on = completed_on,
-                                           points_earned = points_earned,
-                                           days_late = completed_on - self.duedate,
-                                           recorded_on = today))
-            
+        self.completions.append(
+            Completion(completed_on = completed_on,
+                       points_earned = self.point_worth(completed_on),
+                       days_late = completed_on - self.duedate,
+                       recorded_on = today))
+        
 
     def __repr__(self):
         return '{name} starts on {date} and recurs every {length}'\
@@ -125,15 +163,6 @@ class Task(CyclenceBase):
                     date = date_str(self.first_due),
                     length = time_str(self.length.days))
 
-
-    @property
-    def last_completed(self):
-        '''Returns the last time the task was completed. If the task has never
-        been completed, returns None'''
-        if self.completions:
-            return self.completions[-1].completed_on
-        else:
-            return None
 
     @property
     def duedate(self):
@@ -190,17 +219,6 @@ class Task(CyclenceBase):
             return hsl.format(120 * (1 - percent_due), 100, 50)
 
 
-class Completion(CyclenceBase):
-    r'''Represents a completion of a task'''
-    __tablename__ = 'completions'
-    
-    task_id = Column(UUID, ForeignKey('tasks.task_id'), primary_key=True)
-    completed_on = Column(Date, primary_key=True)
-    points_earned = Column(Integer)
-    recorded_on = Column(DateTime)
-    days_late = Column(Integer)
-
-    task = relationship("Task", backref=backref("completions", order_by=completed_on))
 
 class User(CyclenceBase):
     r'''Represents a user in the system'''
