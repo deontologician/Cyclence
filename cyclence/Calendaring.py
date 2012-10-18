@@ -153,7 +153,7 @@ class Task(CyclenceBase):
         self.completions.append(
             Completion(completed_on = completed_on,
                        points_earned = self.point_worth(completed_on),
-                       days_late = completed_on - self.duedate,
+                       days_late = (completed_on - self.duedate).days,
                        recorded_on = today))
         
 

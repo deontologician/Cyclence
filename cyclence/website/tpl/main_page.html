@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html ng-app="cyclence">
+<html ng-app="Cyclence">
   <head>
     <title>Cyclence</title>
     <link rel="shortcut icon" href="{{ static_url('img/favicon.png') }}">
@@ -8,7 +8,7 @@
           type="text/css" media="screen" />
     <link rel="stylesheet" href="{{ static_url('css/cyclence.css') }}" 
           type="text/css" media="screen" />
-    <link rel="stylesheet" href="{{ static_url('css/datepicker.css') }}"
+    <link rel="stylesheet" href="{{ static_url('css/datepicker.css') }}" />
   </head>
   <body ng-controller="MainCtrl">
     <div class="container">
@@ -52,15 +52,6 @@
               </td>
             </tr>
           </table>
-          <div class="edit-box span9" ng-hide="current_task == null">
-            <form class="form">
-              <legend>Complete {{! current_task.name }}</legend>
-              <label>Completed on:</label>
-              <input ui-date
-                     name="completed_on"
-                     value="{{ today.strftime('%Y-%m-%d') }}">
-            </form>
-          </div>
         </div>
       </div>
       <div class="row-fluid">
@@ -94,9 +85,9 @@
     <script src="//ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.23/jquery-ui.min.js"></script>
     <script type="text/javascript"
-            src="{{ static_url('js/angular.min.js') }}"></script>
+            src="{{ static_url('js/angular.js') }}"></script>
     <script type="text/javascript"
-            src="{{ static_url('js/angular-resource.min.js') }}"></script>
+            src="{{ static_url('js/angular-resource.js') }}"></script>
     <script type="text/javascript"
             src="{{ static_url('js/angular-ui.js') }}"></script>
     <script type="text/javascript"

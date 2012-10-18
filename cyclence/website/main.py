@@ -16,6 +16,7 @@ from cyclence.Calendaring import User, Task, Completion
 uuidre = r'[\dA-Fa-f]{8}-[\dA-Fa-f]{4}-[\dA-Fa-f]{4}'\
           '-[\dA-Fa-f]{4}-[\dA-Fa-f]{12}'
 
+datere = r'[\d]{4}-[\d]{2}-[\d]{2}'
 
 def parsedate(datestr):
     'Parses a date in ISO8601 format'
@@ -52,8 +53,10 @@ class CyclenceApp(web.Application):
                     (r"/logout", LogoutHandler),
                     (r"/api/tasks", TasksHandler),
                     (r"/api/tasks/({})".format(uuidre), TaskHandler),
-                    (r"/api/tasks/({})/completions".format(uuidre),
-                     CompletionsHandler)
+                    (r"/api/tasks/({})/completions".format(uuidre), 
+                     CompletionsHandler),
+                    (r"/api/tasks/({})/completions/({})".format(uuidre, datere),
+                     CompletionHandler)
                     ]
         settings = dict(
             cookie_secret=os.getenv('CYCLENCE_COOKIE_SECRET'),
@@ -90,7 +93,7 @@ class TasksHandler(BaseHandler):
                 tags = list(task.tags),
                 )
             result.append(t)
-        self.write({'tasks': result})
+        self.write(escape.json_encode(result))
 
     @web.authenticated
     def post(self):
@@ -119,26 +122,20 @@ class CompletionsHandler(BaseHandler):
         task = filter(lambda t: t.task_id == task_id, self.current_user.tasks)
         if len(task) == 0:
             raise HTTPError(404, 'Non existant task or not authorized')
-        self.write({c.completed_on.isoformat(): 
+        self.write(escape.json_encode([
                     {'completed_on': c.completed_on.isoformat(),
                      'task_id': str(c.task_id),
                      'points_earned': c.points_earned,
                      'recorded_on': c.recorded_on.isoformat(),
-                     'days_late': c.days_late} for c in task[0].completions})
-        
-    
-    @web.authenticated
-    def post(self, task_id):
-        task = self.session.query(Task).filter(Task.task_id == task_id).one()
-        try:
-            dt_str = self.json.get('completed_on')
-        except KeyError:
-            raise HTTPError(405, "completed_on key missing in response")
-        task.complete(parsedate(dt_str))
-        self.session.commit()
-        self.redirect('/api/tasks/{}/completions/{}'.format(task_id, dt_str),
-                      status=303)
+                     'days_late': c.days_late} for c in task[0].completions]))
 
+
+class CompletionHandler(BaseHandler):
+    @web.authenticated
+    def put(self, task_id, completed_on):
+        task = self.session.query(Task).filter(Task.task_id == task_id).one()
+        task.complete(parsedate(completed_on))
+        self.session.commit()
 
 class MainHandler(BaseHandler):
     def get(self):
