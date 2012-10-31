@@ -145,10 +145,10 @@ class Task(CyclenceBase):
         if completed_on > today:
             raise FutureCompletionException('The completion date cannot be in '
                                             'the future.')
-        if self.is_not_due and completed_on < self.duedate:
-            raise EarlyCompletionException("This task isn't due until {0}, and is "
-                                       "not allowed to be completed early.".
-                                       format(date_str(self.duedate)))
+        if self.last_completed == completed_on:
+            raise AlreadyCompletedException(
+                'This is already recorded as being completed on {}'
+                .format(date_str(completed_on)))
         # calculate days_late, calculate points
         self.completions.append(
             Completion(completed_on = completed_on,
@@ -236,9 +236,9 @@ class User(CyclenceBase):
         
 
 
-class EarlyCompletionException(Exception):
-    '''Thrown when a task is completed ahead of its due date and allow_early is
-    False'''
+class AlreadyCompletedException(Exception):
+    '''Thrown when a task is completed on a date it has already been completed
+    on'''
     pass
 
 class FutureCompletionException(Exception):
