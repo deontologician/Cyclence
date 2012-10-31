@@ -14,7 +14,7 @@
     <div class="container">
       <div class="row">
         <div class="span4">
-          <img id="banner-michael" 
+          <img id="banner-michael"
                src="{{ static_url('img/Cyclence_Banner.png') }}" alt="Cyclence">
         </div>
         <div class="span3 offset5">
@@ -46,7 +46,9 @@
               <td>{{! task.last_completed || "never" }}</td>
               <td>{{! task.points_today }}</td>
               <td>
-                <button class="btn btn-success btn-small" ng-click="complete(task)">
+                <button class="btn btn-success btn-small" 
+                        disabled="{{! task.last_completed != today }}"
+                        ng-click="complete(task)">
                   <i class="icon-ok-circle"></i> Complete
                 </button>
               </td>
