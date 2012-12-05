@@ -19,21 +19,14 @@ DUE = 'due'
 OVERDUE = 'overdue'
 NOT_DUE = 'not due'
 
-task2tag_assoc = Table('tasktags', CyclenceBase.metadata,
-    Column('task_id', UUID, ForeignKey('tasks.task_id', ondelete='cascade'), 
-           primary_key=True),
-    Column('tag_name', String, ForeignKey('tags.tag_name', ondelete='cascade'),
-           primary_key=True)
-)
-
 class Tag(CyclenceBase):
-    '''Represents a task tag'''
-    __tablename__ = 'tags'
+    r'''Represents a tag attached to a specific Task'''
+    __tablename__ = 'tasktags'
 
+    task_id = Column(UUID, ForeignKey('tasks.task_id'),
+                     primary_key=True)
     tag_name = Column(String, primary_key=True)
 
-    def __init__(self, tag_name):
-        self.tag_name = tag_name
 
 class Completion(CyclenceBase):
     r'''Represents a completion of a task'''
@@ -64,9 +57,7 @@ class Task(CyclenceBase):
         .where(Completion.task_id == task_id))
 
     user = relationship('User', backref='tasks')
-    _tags = relationship('Tag', secondary="tasktags", backref="tasks",
-                         collection_class=set)
-    tags = association_proxy('_tags', 'tag_name')
+    _tags = relationship('Tag', collection_class=set)
     completions = relationship("Completion", lazy="dynamic", backref="task")
 
     def __init__(self, name, length, first_due=None, allow_early=True,
@@ -103,10 +94,25 @@ class Task(CyclenceBase):
             self.first_due = first_due
         
         if tags:
-            for tag in tags:
-                self.tags.add(tag)
+            self.add_tags(tags)
             
         self.notes = notes
+
+    @property
+    def tags(self):
+        '''Tags on this task'''
+        return {t.tag_name for t in self._tags}
+
+    def add_tags(self, tags):
+        '''Allows adding tags'''
+        for tag in tags:
+            t = Tag(self.task_id, tag)
+            self._tags.add(t)
+
+    def remove_tag(self, tag_name):
+        '''Removes a tag from the task'''
+        t = s.query(Tag).get((self.task_id, tag_name))
+        self._tags.remove(t)
 
     @property
     def dueity(self):
