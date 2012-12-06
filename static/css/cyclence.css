@@ -38,3 +38,7 @@ body {
     background-color: #aaa;
 }
 
+.form-inline {
+    margin: 0;
+    padding: 0;
+}

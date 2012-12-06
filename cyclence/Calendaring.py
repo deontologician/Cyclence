@@ -27,6 +27,9 @@ class Tag(CyclenceBase):
                      primary_key=True)
     tag_name = Column(String, primary_key=True)
 
+    def __init__(self, task_id, tag_name):
+        self.task_id = task_id
+        self.tag_name = tag_name
 
 class Completion(CyclenceBase):
     r'''Represents a completion of a task'''
@@ -95,7 +98,6 @@ class Task(CyclenceBase):
         
         if tags:
             self.add_tags(tags)
-            
         self.notes = notes
 
     @property
@@ -252,53 +254,3 @@ class FutureCompletionException(Exception):
     future'''
     pass
 
-def date_str(dt):
-    """Returns a human readable date used throughout Cyclence to represent dates
-    as strings"""
-    return dt.strftime('%b %d, %Y')
-
-def time_str(length):
-    '''Returns a human comprehensible string from length. Either a timedelta can
-    be passed in, or a integer representing a number of days can be passed in.
-       
-       >>> time_str(3)
-       '3 days'
-       >>> time_str(10)
-       '1 week, 3 days'
-       >>> time_str(366)
-       '1 year, 1 day'
-       >>> time_str(0)
-       'never'
-       >>> time_str(timedelta(14))
-       '2 weeks'
-    '''
-    if type(length) is timedelta:
-        days = length.days
-    else:
-        days = length
-
-    if days == 0:
-        return 'never'
-
-    #pluralizer
-    def pl(word, i):
-        if i == 0 or i > 1:
-            return '{0}s'.format(word)
-        else:
-            return word
-
-    result = []
-    while days != 0:
-        if days // 365 > 0:
-            years = days // 365
-            result.append('{0} {1}'.format(years, pl('year',years)))
-            days = days % 365
-        elif days // 7 > 0:
-            weeks = days // 7
-            result.append('{0} {1}'.format(weeks, pl('week',weeks)))
-            days = days % 7
-        else:
-            result.append('{0} {1}'.format(days, pl('day', days)))
-            days = 0
-
-    return ', '.join(result)

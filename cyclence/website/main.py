@@ -51,11 +51,11 @@ class CyclenceApp(web.Application):
         handlers = [(r"/", MainHandler),
                     (r"/auth/google", GoogleHandler),
                     (r"/logout", LogoutHandler),
-                    (r"/api/tasks", TasksHandler),
-                    (r"/api/tasks/({})".format(uuidre), TaskHandler),
-                    (r"/api/tasks/({})/completions".format(uuidre), 
+                    (r"/tasks", TasksHandler),
+                    (r"/tasks/({})".format(uuidre), None),
+                    (r"/tasks/({})/completions".format(uuidre),
                      CompletionsHandler),
-                    (r"/api/tasks/({})/completions/({})".format(uuidre, datere),
+                    (r"/tasks/({})/completions/({})".format(uuidre, datere),
                      CompletionHandler)
                     ]
         settings = dict(
@@ -98,23 +98,19 @@ class TasksHandler(BaseHandler):
     @web.authenticated
     def post(self):
         '''Adds a task to the current user'''
-        t = Task(self.json['taskname'],
-                 self.json['length'], 
-                 self.json.get('first_due'),
-                 self.json.get('allow_early', True),
-                 self.json.get('points', 100),
-                 self.json.get('decay_length'),
-                 self.json.get('tags'),
-                 self.json.get('notes'))
+        t = Task(self.get_argument('taskname'),
+                 int(self.get_argument('length')), 
+                 self.get_argument('firstdue'),
+                 self.get_argument('allow_early', True),
+                 int(self.get_argument('points', 100)),
+                 int(self.get_argument('decay_length', self.get_argument('length'))),
+                 self.get_argument('tags').replace(',',' ').split(),
+                 self.get_argument('notes'))
         t.user_email = self.current_user.email
         self.current_user.tasks.append(t)
         self.session.commit()
-        self.redirect('/api/tasks/{}'.format(t.task_id), status=303)
+        self.redirect('/', status=303)
 
-class TaskHandler(BaseHandler):
-    @web.authenticated
-    def get(self, task_id):
-        self.write({'task': task_id})
 
 class CompletionsHandler(BaseHandler):
     @web.authenticated
@@ -132,17 +128,19 @@ class CompletionsHandler(BaseHandler):
 
 class CompletionHandler(BaseHandler):
     @web.authenticated
-    def put(self, task_id, completed_on):
+    def post(self, task_id, completed_on):
         task = self.session.query(Task).filter(Task.task_id == task_id).one()
         task.complete(parsedate(completed_on))
         self.session.commit()
+        self.redirect('/', status=303)
 
 class MainHandler(BaseHandler):
     def get(self):
         if not self.current_user:
             self.render('logged_out.html')
         else:
-            self.render('main_page.html', user=self.current_user, 
+            self.render('main_page.html',
+                        user=self.current_user,
                         today=date.today())
 
 class GoogleHandler(BaseHandler, auth.GoogleMixin):
