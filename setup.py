@@ -10,6 +10,7 @@ setup(name = 'cyclence'
       ,install_requires = ["sqlalchemy",
                            "tornado",
                            "psycopg2",
+                           "supervisor"
                            ]
 )
 
