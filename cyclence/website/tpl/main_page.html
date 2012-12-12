@@ -12,17 +12,21 @@
           type="text/css" media="screen" />
     <script src="{{ static_url('js/jquery-1.8.1.min.js') }}"></script>
     <script src="{{ static_url('js/bootstrap-tab.js') }}"></script>
+    <script src="{{ static_url('js/bootstrap-transition.js') }}"></script>
+    <script src="{{ static_url('js/bootstrap-tooltip.js') }}"></script>
   </head>
   <body>
     <div class="container-fluid">
       <div class="row-fluid">
-        <div class="span4">
+        <div class="span3">
           <img id="banner-michael"
                src="{{ static_url('img/Cyclence_Banner.png') }}" alt="Cyclence">
         </div>
-        <div class="span3 offset5">
+        <div class="span3 offset6 topper">
           <img class="gravatar" src="{{ user.gravatar_url }}?s=30&d=retro">
-          <span id="loginname">{{ user.email }}</span> <a href="/logout">(logout)</a>
+          <span id="loginname">{{ user.email }}</span> 
+          <a href="/logout" title="Log Out">
+            <i class="icon-off icon-white"></i></a>
         </div>
       </div>
       <div id="main" class="row-fluid">
@@ -39,7 +43,7 @@
         </div>
         <div class="fluid-span9 tab-content">
           <div class="tab-pane row-fluid active" id="tasks">
-            <table class="table span9">
+            <table class="table fluid-span9">
               <tr>
                 <th></th>
                 <th>Task</th>
@@ -58,22 +62,33 @@
                 </td>
                 <td>{{ task.name }}</td>
                 <td>{{ utils.time_str(task.length) }} </td>
-                <td><span title="{{task.duedate}}">
-                    {{ utils.relative_time(task.duedate) }}</span> </td>
-                <td>{{ task.last_completed or "never" }}</td>
+                <td><span title="{{utils.date_str(task.duedate)}}">
+                    {{ utils.relative_time(task.duedate) }}</span></td>
+                <td><span title="{{utils.date_str(task.last_completed)}}">
+                  {{ utils.relative_time(task.last_completed) }}</span></td>
                 <td>{{ task.point_worth() }}</td>
                 <td>
                   <form action="/tasks/{{task.task_id}}/completions/{{today.isoformat()}}"
                         method="POST" class="form-inline">
-                    <button class="btn btn-success btn-small"
-                            type="submit">
-                      <i class="icon-ok-circle"></i> Complete
+                    <button 
+                    {% if task.dueity != 'not due' or task.allow_early %}
+                       class="btn btn-success btn-small"
+                    {% else %}
+                       class="btn btn-inverse btn-small"
+                       title="This task isn't due yet!"
+                    {% end %}
+                    {% if task.last_completed == today %}
+                       disabled
+                       title="You already completed this today"
+                    {% end %}
+                       type="submit">
+                      <i class="icon-ok icon-white"></i> Complete
                     </button>
                   </form>
                 </td>
                 <td>
                   {% for tag in task.tags %}
-                  <span class="label">{{tag}}</span>
+                  <span class="label label-info"><i class="icon-tag icon-white"></i> {{tag}}</span>
                   {% end %}
                 </td>
               </tr>

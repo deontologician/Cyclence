@@ -101,11 +101,11 @@ class TasksHandler(BaseHandler):
         t = Task(self.get_argument('taskname'),
                  int(self.get_argument('length')), 
                  self.get_argument('firstdue'),
-                 self.get_argument('allow_early', True),
+                 self.get_argument('allowearly', 'off') == 'on',
                  int(self.get_argument('points', 100)),
                  int(self.get_argument('decay_length', self.get_argument('length'))),
-                 self.get_argument('tags').replace(',',' ').split(),
-                 self.get_argument('notes'))
+                 set(self.get_argument('tags', '').replace(',',' ').split()),
+                 self.get_argument('notes', None))
         t.user_email = self.current_user.email
         self.current_user.tasks.append(t)
         self.session.commit()

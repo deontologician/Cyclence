@@ -2,6 +2,8 @@
 from datetime import datetime, timedelta, date
 
 def relative_time(dt):
+    if dt is None:
+        return "never"
     if isinstance(dt, datetime):
         dt = dt.date()
     today = date.today()
@@ -34,7 +36,10 @@ def relative_time(dt):
 def date_str(dt):
     """Returns a human readable date used throughout Cyclence to represent dates
     as strings"""
-    return dt.strftime('%b %d, %Y')
+    if dt is None:
+        return 'never'
+    else:
+        return dt.strftime('%b %d, %Y')
 
 def time_str(length):
     '''Returns a human comprehensible string from length. Either a timedelta can
