@@ -227,6 +227,10 @@ class Task(CyclenceBase):
             return hsl.format(120 * (1 - percent_due), 100, 50)
 
 
+friendships = Table('friendships', CyclenceBase.metadata,
+    Column('email_1', String, ForeignKey('users.email'), primary_key=True),
+    Column('email_2', String, ForeignKey('users.email'), primary_key=True)
+)
 
 class User(CyclenceBase):
     r'''Represents a user in the system'''
@@ -236,13 +240,20 @@ class User(CyclenceBase):
     name = Column(String)
     firstname = Column(String)
     lastname = Column(String)
+
+    _followers = relationship('User', secondary=friendships,
+                              primaryjoin=friendships.c.email_1==email,
+                              secondaryjoin=friendships.c.email_2==email,
+                              backref='_followees')
     
+    @property
+    def friends(self):
+        return self._followers + self._followees
+
     @property
     def gravatar_url(self):
         return 'http://www.gravatar.com/avatar/{hash}'.format(
             hash = md5(self.email).hexdigest())
-        
-
 
 class AlreadyCompletedException(Exception):
     '''Thrown when a task is completed on a date it has already been completed
@@ -253,4 +264,3 @@ class FutureCompletionException(Exception):
     '''Thrown when a task is completed with a completion date that is in the
     future'''
     pass
-

@@ -37,7 +37,11 @@
                   <i class="icon-tasks"></i> Tasks
               </a></li>
               <li><a href="#new-task" data-toggle="tab">
-                  <i class="icon-pencil"></i> New Task </a></li>
+                  <i class="icon-pencil"></i> New Task 
+              </a></li>
+              <li><a href="#friendspane" data-toggle="tab">
+                  <i class="icon-user"></i> Friends
+              </a></li>
             </ul>
           </div>
         </div>
@@ -146,6 +150,14 @@
                 <button type="submit" class="btn btn-primary">Create Task</button>
               </div>
             </form>
+          </div>
+          <div class="tab-pane row-fluid" id="friendspane">
+            <ul>
+            {% for friend in user.friends %}
+            <li><img class="gravatar" src="{{ friend.gravatar_url }}?s=30&d=retro">
+              {{ friend.name}} &mdash; {{ friend.email }}</li>
+            {% end %}
+            </ul>
           </div>
         </div>
       </div>

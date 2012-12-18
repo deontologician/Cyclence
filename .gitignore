@@ -8,3 +8,4 @@ cyclence.conf
 *angular-1.0.2*
 *.tar.gz
 *.egg-info
+static/bootstrap/
