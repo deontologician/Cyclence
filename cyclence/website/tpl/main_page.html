@@ -42,6 +42,9 @@
               <li><a href="#friendspane" data-toggle="tab">
                   <i class="icon-user"></i> Friends
               </a></li>
+              <li><a href="#notifications" data-toggle="tab">
+                  <i class="icon-flag"></i> Notifications
+              </a></li>
             </ul>
           </div>
         </div>
@@ -74,18 +77,20 @@
                 <td>
                   <form action="/tasks/{{task.task_id}}/completions/{{today.isoformat()}}"
                         method="POST" class="form-inline">
-                    <button 
+                    <button type="submit"
                     {% if task.dueity != 'not due' or task.allow_early %}
                        class="btn btn-success btn-small"
-                    {% else %}
+                    {% elif task.dueity == 'not due' and task.last_completed != today %}
                        class="btn btn-inverse btn-small"
                        title="This task isn't due yet!"
-                    {% end %}
-                    {% if task.last_completed == today %}
+                    {% elif task.last_completed == today %}
                        disabled
                        title="You already completed this today"
+                       class="btn btn-inverse btn-small"
+                    {% else %}
+                       title="I don't know how truth tables work"
                     {% end %}
-                       type="submit">
+                    >
                       <i class="icon-ok icon-white"></i> Complete
                     </button>
                   </form>
@@ -152,11 +157,53 @@
             </form>
           </div>
           <div class="tab-pane row-fluid" id="friendspane">
-            <ul>
+            <ul class="friend-list">
             {% for friend in user.friends %}
             <li><img class="gravatar" src="{{ friend.gravatar_url }}?s=30&d=retro">
               {{ friend.name}} &mdash; {{ friend.email }}</li>
             {% end %}
+            <li>
+              <form action="/invite" class="form-inline" method="post">
+                <label>Invite a friend <input name="email"></input></label>
+                <button type="submit" class="btn btn-primary btn-small">Invite</button>
+              </form>
+            </li>
+            </ul>
+          </div>
+          <div class="tab-pane row-fluid" id="notifications">
+            <ul class="notification-list">
+              {% for note in user.notifications %}
+              <li title="{{ utils.fmt_time(note.timestamp)}}" 
+                <i
+                {% if note.noti_type == 'error' %}
+                class="label label-warning"><i class="icon-warning-sign icon-white"
+                {% elif note.noti_type == 'share' %}
+                class="label label-success"><i class="icon-gift icon-white"
+                {% elif note.noti_type == 'befriend' %}
+                class="label label-info"><i class="icon-user icon-white"
+                {% else %}
+                class="label label-default"><i class="icon-comment icon-white"
+                {% end %}
+                   ></i>
+                {{ note.message }}
+                {% if note.noti_type == 'befriend' %}
+                <form class="form-inline buttonform"
+                      action="/notifications/{{note.notification_id}}"
+                      method="post">
+                  <input type="hidden" name="accept" value="true"></input>
+                  <button type="submit" class="btn btn-link btn-small">Accept</button>
+                </form>
+                {% end %}
+                <form class="form-inline deleteform"
+                      action="/notifications/{{note.notification_id}}"
+                      method="post">
+                  <input type="hidden" name="delete" value="true"></input>
+                  <button type="submit" class="btn btn-link btn-small">
+                    <i class="icon-remove-circle icon-white"></i>
+                  </button>
+                </form>
+              </li>
+              {% end %}
             </ul>
           </div>
         </div>

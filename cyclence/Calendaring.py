@@ -1,6 +1,6 @@
 """This module includes much of the core functionality of Cyclence."""
 
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 from itertools import count
 from math import ceil
 from uuid import uuid4
@@ -18,6 +18,18 @@ CyclenceBase = declarative_base()
 DUE = 'due'
 OVERDUE = 'overdue'
 NOT_DUE = 'not due'
+
+class Notification(CyclenceBase):
+    r'''Represents a notification in the system'''
+    __tablename__ = 'notifications'
+
+    notification_id = Column(UUID, primary_key=True)
+    email = Column(String, ForeignKey('users.email'))
+    timestamp = Column(DateTime)
+    message = Column(String)
+    noti_type = Column(String)
+    sender = Column(String, ForeignKey('users.email'), nullable=True)
+    task_id = Column(UUID, ForeignKey('tasks.task_id'), nullable=True)
 
 class Tag(CyclenceBase):
     r'''Represents a tag attached to a specific Task'''
@@ -41,12 +53,16 @@ class Completion(CyclenceBase):
     recorded_on = Column(DateTime)
     days_late = Column(Integer)
 
+usertasks = Table('taskuser', CyclenceBase.metadata,
+    Column('task_id', UUID, ForeignKey('tasks.task_id'), primary_key=True),
+    Column('email', String, ForeignKey('users.email'), primary_key=True)
+)
+
 class Task(CyclenceBase):
     "Represents a recurring task."
 
     __tablename__ = "tasks"
     task_id = Column(UUID, primary_key=True)
-    user_email = Column(String, ForeignKey('users.email'))
     name = Column(String)
     length = Column(INTERVAL)
     first_due = Column(Date, nullable=True)
@@ -59,7 +75,8 @@ class Task(CyclenceBase):
         select([func.max(Completion.completed_on)])
         .where(Completion.task_id == task_id))
 
-    user = relationship('User', backref='tasks')
+    users = relationship('User', secondary=usertasks,
+                         backref='tasks')
     _tags = relationship('Tag', collection_class=set)
     completions = relationship("Completion", lazy="dynamic", backref="task")
 
@@ -156,7 +173,7 @@ class Task(CyclenceBase):
         if self.last_completed == completed_on:
             raise AlreadyCompletedException(
                 'This is already recorded as being completed on {}'
-                .format(date_str(completed_on)))
+                .format(completed_on))
         # calculate days_late, calculate points
         self.completions.append(
             Completion(completed_on = completed_on,
@@ -245,6 +262,30 @@ class User(CyclenceBase):
                               primaryjoin=friendships.c.email_1==email,
                               secondaryjoin=friendships.c.email_2==email,
                               backref='_followees')
+
+    notifications = relationship(Notification, order_by=Notification.timestamp.desc(),
+                                 backref='user',
+                                 primaryjoin='User.email == Notification.email',
+                                 cascade='all, delete, delete-orphan')
+
+    def share_task(self, task, sharer):
+        r'''Share a task with this user'''
+        self.notify('share', '{.name} has shared the task "{.name}" with you'
+                    .format(sharer, task), sender=sharer.email)
+
+    def befriend(self, sender):
+        self.notify('befriend', '{.name} wants to be friends!'.format(sender),
+                    sender=sender.email)
+
+    def notify(self, noti_type, msg, task_id=None, sender=None):
+        self.notifications.append(Notification(notification_id=str(uuid4()),
+                                               email=self.email,
+                                               timestamp=datetime.now(),
+                                               message=msg,
+                                               noti_type=noti_type,
+                                               task_id=task_id,
+                                               sender=sender,
+                                               ))
     
     @property
     def friends(self):

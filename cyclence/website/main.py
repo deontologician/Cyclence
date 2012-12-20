@@ -11,7 +11,8 @@ from tornado.httpclient import HTTPError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from cyclence.Calendaring import User, Task, Completion
+from cyclence.Calendaring import User, Task, Completion, Notification
+from cyclence.utils import date_str
 
 uuidre = r'[\dA-Fa-f]{8}-[\dA-Fa-f]{4}-[\dA-Fa-f]{4}'\
           '-[\dA-Fa-f]{4}-[\dA-Fa-f]{12}'
@@ -56,7 +57,9 @@ class CyclenceApp(web.Application):
                     (r"/tasks/({})/completions".format(uuidre),
                      CompletionsHandler),
                     (r"/tasks/({})/completions/({})".format(uuidre, datere),
-                     CompletionHandler)
+                     CompletionHandler),
+                    (r"/notifications/({})".format(uuidre), NotificationHandler),
+                    (r"/invite", InviteHandler),
                     ]
         settings = dict(
             cookie_secret=os.getenv('CYCLENCE_COOKIE_SECRET'),
@@ -71,29 +74,6 @@ class CyclenceApp(web.Application):
 
 class TasksHandler(BaseHandler):
     '''Returns tasks json'''
-    @web.authenticated
-    def get(self):
-        '''Get all of a user's tasks'''
-        result = []
-        for task in self.current_user.tasks:
-            t = dict(
-                id = task.task_id,
-                name = task.name,
-                length = task.length.days,
-                decay_length = task.decay_length.days,
-                duedate = task.duedate.isoformat(),
-                allow_early = task.allow_early,
-                notes = task.notes,
-                dueity = task.dueity,
-                last_completed = task.last_completed.isoformat() \
-                    if task.last_completed else None,
-                points = task.points,
-                points_today = task.point_worth(),
-                hue = task.hue(),
-                tags = list(task.tags),
-                )
-            result.append(t)
-        self.write(escape.json_encode(result))
 
     @web.authenticated
     def post(self):
@@ -109,7 +89,7 @@ class TasksHandler(BaseHandler):
         t.user_email = self.current_user.email
         self.current_user.tasks.append(t)
         self.session.commit()
-        self.redirect('/', status=303)
+        self.redirect('/')
 
 
 class CompletionsHandler(BaseHandler):
@@ -129,16 +109,26 @@ class CompletionsHandler(BaseHandler):
 class CompletionHandler(BaseHandler):
     @web.authenticated
     def post(self, task_id, completed_on):
+        completion_date = parsedate(completed_on)
         task = self.session.query(Task).filter(Task.task_id == task_id).one()
-        task.complete(parsedate(completed_on))
-        self.session.commit()
-        self.redirect('/', status=303)
+        if completion_date > task.last_completed:
+            task.complete(parsedate(completed_on))
+            self.session.commit()
+        else:
+            self.current_user.notify('error', 
+                                     "You already completed '{}' on {}"
+                                     .format(task.name, 
+                                             date_str(completion_date)),
+                                     task.task_id)
+            self.session.commit()
+        self.redirect('/')
 
 class MainHandler(BaseHandler):
     def get(self):
         if not self.current_user:
             self.render('logged_out.html')
         else:
+            self.session.refresh(self.current_user) #get fresh data
             self.render('main_page.html',
                         user=self.current_user,
                         today=date.today())
@@ -169,9 +159,42 @@ class LogoutHandler(BaseHandler):
     def get(self):
         self.clear_cookie('user')
         self.redirect('/')
-        return
-        self.write('You are now logged out!')
-        self.write('<p><a href="/auth/google">Log in again</a></p>')
+
+class NotificationHandler(BaseHandler):
+    @web.authenticated
+    def post(self, notification_id): 
+        note = self.session.query(Notification).filter_by(notification_id=notification_id).one()
+        if note not in self.current_user.notifications:
+            redirect('/')
+            return
+        if note.noti_type == 'befriend':
+            if self.get_argument('accept', False) == 'true':
+                friend = self.session.query(User).filter_by(email=note.sender).one()
+                self.current_user._followers.append(friend)
+                friend.notify('message', '{.name} has accepted your friend request'
+                              .format(self.current_user))
+            self.current_user.notifications.remove(note)
+            self.session.commit()
+        elif self.get_argument('delete') == 'true':
+            self.current_user.notifications.remove(note)
+            self.session.commit()
+        self.redirect('/')
+
+class InviteHandler(BaseHandler):
+    @web.authenticated
+    def post(self):
+        email = self.get_argument('email')
+        if email is None:
+            redirect('/')
+            return
+        potential_friend = self.session.query(User).filter_by(email=email).one()
+        if potential_friend == self.current_user:
+            self.current_user.notify('error',
+                                     'Forever Alone: you tried to befriend yourself')
+        else:
+            potential_friend.befriend(self.current_user)
+        self.session.commit()
+        self.redirect('/')
 
 if __name__ == '__main__':
     CyclenceApp().listen(int(os.getenv('CYCLENCE_TORNADO_PORT')))

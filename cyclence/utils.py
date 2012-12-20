@@ -41,6 +41,16 @@ def date_str(dt):
     else:
         return dt.strftime('%b %d, %Y')
 
+def fmt_time(dt):
+    r"""Returns a datetime as a human readable string"""
+    if dt is None:
+        return 'never'
+    else:
+        if dt == datetime.today():
+            return dt.strftime('%I:%M%p')
+        else:
+            return dt.strftime('%b %d, %Y %I:%M%p')
+
 def time_str(length):
     '''Returns a human comprehensible string from length. Either a timedelta can
     be passed in, or a integer representing a number of days can be passed in.

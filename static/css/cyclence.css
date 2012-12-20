@@ -47,7 +47,27 @@ body {
     background-color: #aaa;
 }
 
-.form-inline {
+form.form-inline {
     margin: 0;
-    padding: 0;
+    padding:0;
+}
+form.buttonform {
+    display:inline;
+}
+form.deleteform {
+    float:right;
+    display:inline;
+}
+form.deleteform button {
+}
+
+ul.notification-list,
+ul.friend-list {
+    list-style-type: none;
+    margin: 0;
+}
+
+ul.notification-list li {
+    margin-bottom: 3px;
+    width: 50%;
 }

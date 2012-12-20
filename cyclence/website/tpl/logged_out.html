@@ -2,22 +2,22 @@
 <html lang="en">
   <head>
     <title>Cyclence</title>
-    <link rel="stylesheet" href="{{ static_url('css/bootstrap.min.css') }}" 
+    <link rel="stylesheet" href="{{ static_url('css/bootstrap.css') }}" 
           type="text/css" media="screen" />
-    <link rel="stylesheet" href="{{ static_url('css/cyclence.css') }}" 
+    <link rel="stylesheet" href="{{ static_url('css/cyclence.css') }}"
           type="text/css" media="screen" />
   </head>
   <body>
-    <div class="container">
-      <div class="row">
-        <div class="span9">
-          <h1>Cyclence</h1>
+    <div class="container-fluid">
+      <div class="row-fluid">
+        <div class="span6 offset3">
+          <img id="banner-michael"
+               src="{{ static_url('img/Cyclence_Banner.png') }}" alt="Cyclence">
         </div>
       </div>
-      <div class="row">
-        <div class="span3 offset3"
-             <p>You need to log in.</p>
-             <p><a href="/auth/google">Log in</a></p>
+      <div class="row-fluid">
+        <h2 class="form-signin-heading offset4">You need to log in.</h2>
+        <a class="btn btn-large btn-primary offset4" href="/auth/google">Log in with Google</a>
       </div>
     </div>
     <script type="text/javascript" 
