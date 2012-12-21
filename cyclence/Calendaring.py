@@ -13,6 +13,8 @@ from sqlalchemy.orm import relationship, column_property
 from sqlalchemy import (Column, Integer, String, Boolean, Date, DateTime, 
                         ForeignKey, Table, select, func)
 
+from cyclence import utils
+
 CyclenceBase = declarative_base()
 
 DUE = 'due'
@@ -52,6 +54,10 @@ class Completion(CyclenceBase):
     points_earned = Column(Integer)
     recorded_on = Column(DateTime)
     days_late = Column(Integer)
+    email = Column(String, ForeignKey('users.email'), nullable=False)
+
+    completer = relationship('User')
+
 
 usertasks = Table('taskuser', CyclenceBase.metadata,
     Column('task_id', UUID, ForeignKey('tasks.task_id'), primary_key=True),
@@ -162,7 +168,7 @@ class Task(CyclenceBase):
         return self.dueity == NOT_DUE
 
 
-    def complete(self, completed_on=None):
+    def complete(self, completer, completed_on=None):
         '''Complete the recurring task.'''
         today = date.today()
         completed_on = completed_on or today
@@ -179,14 +185,15 @@ class Task(CyclenceBase):
             Completion(completed_on = completed_on,
                        points_earned = self.point_worth(completed_on),
                        days_late = (completed_on - self.duedate).days,
-                       recorded_on = today))
+                       recorded_on = today,
+                       email=completer.email))
         
 
     def __repr__(self):
         return '{name} starts on {date} and recurs every {length}'\
             .format(name = self.name,
-                    date = date_str(self.first_due),
-                    length = time_str(self.length.days))
+                    date = utils.date_str(self.first_due),
+                    length = utils.time_str(self.length.days))
 
 
     @property

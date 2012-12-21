@@ -48,12 +48,13 @@ class BaseHandler(web.RequestHandler):
 class CyclenceApp(web.Application):
     r'''Customized application for Cyclence that includes database
     initialization'''
-    def __init__(self):
+    def __init__(self, debug=False):
         handlers = [(r"/", MainHandler),
                     (r"/auth/google", GoogleHandler),
                     (r"/logout", LogoutHandler),
                     (r"/tasks", TasksHandler),
-                    (r"/tasks/({})".format(uuidre), None),
+                    (r"/tasks/({})".format(uuidre), TaskHandler),
+                    (r"/tasks/({})/share".format(uuidre), TaskShareHandler),
                     (r"/tasks/({})/completions".format(uuidre),
                      CompletionsHandler),
                     (r"/tasks/({})/completions/({})".format(uuidre, datere),
@@ -70,16 +71,16 @@ class CyclenceApp(web.Application):
             )
         web.Application.__init__(self, handlers, **settings)
         connstr = os.getenv('CYCLENCE_DB_CONNECTION_STRING')
-        self.session = sessionmaker(bind=create_engine(connstr))()
+        self.session = sessionmaker(bind=create_engine(connstr, echo=debug))()
 
 class TasksHandler(BaseHandler):
-    '''Returns tasks json'''
+    '''Allows creation of tasks'''
 
     @web.authenticated
     def post(self):
         '''Adds a task to the current user'''
         t = Task(self.get_argument('taskname'),
-                 int(self.get_argument('length')), 
+                 int(self.get_argument('length')),
                  self.get_argument('firstdue'),
                  self.get_argument('allowearly', 'off') == 'on',
                  int(self.get_argument('points', 100)),
@@ -91,6 +92,34 @@ class TasksHandler(BaseHandler):
         self.session.commit()
         self.redirect('/')
 
+class TaskHandler(BaseHandler):
+    r'''Handles updates to a task'''
+    pass
+
+class TaskShareHandler(BaseHandler):
+    r'''Handles sharing tasks'''
+
+    @web.authenticated
+    def post(self, task_id):
+        try:
+            task = self.session.query(Task).filter_by(task_id=task_id).one()
+            if task not in self.current_user.tasks:
+                raise Exception('User does not own this task')
+            email = self.get_argument('friend', None)
+            if email is None:
+                raise Exception('Email argument not given')
+            friend = self.session.query(User).filter_by(email=email).one()
+            if friend not in self.current_user.friends:
+                raise Exception('Cannot share a task with someone who is not a friend.')
+            friend.share_task('share', '{.name} has shared the task "{.name}" with you'.
+                              format(self.current_user, task),
+                              task=task,
+                              sharer=self.current_user)
+            self.session.commit()
+        except Exception as e:
+            print(str(e))
+        finally:
+            self.redirect('/')
 
 class CompletionsHandler(BaseHandler):
     @web.authenticated
@@ -111,8 +140,8 @@ class CompletionHandler(BaseHandler):
     def post(self, task_id, completed_on):
         completion_date = parsedate(completed_on)
         task = self.session.query(Task).filter(Task.task_id == task_id).one()
-        if completion_date > task.last_completed:
-            task.complete(parsedate(completed_on))
+        if task.last_completed is None or completion_date > task.last_completed:
+            task.complete(self.current_user, parsedate(completed_on))
             self.session.commit()
         else:
             self.current_user.notify('error', 
@@ -128,7 +157,7 @@ class MainHandler(BaseHandler):
         if not self.current_user:
             self.render('logged_out.html')
         else:
-            self.session.refresh(self.current_user) #get fresh data
+            self.session.refresh(self.current_user)
             self.render('main_page.html',
                         user=self.current_user,
                         today=date.today())
@@ -165,17 +194,25 @@ class NotificationHandler(BaseHandler):
     def post(self, notification_id): 
         note = self.session.query(Notification).filter_by(notification_id=notification_id).one()
         if note not in self.current_user.notifications:
-            redirect('/')
-            return
-        if note.noti_type == 'befriend':
-            if self.get_argument('accept', False) == 'true':
-                friend = self.session.query(User).filter_by(email=note.sender).one()
-                self.current_user._followers.append(friend)
-                friend.notify('message', '{.name} has accepted your friend request'
-                              .format(self.current_user))
+            pass # will just redirect
+        elif self.get_argument('delete', None) == 'true':
             self.current_user.notifications.remove(note)
             self.session.commit()
-        elif self.get_argument('delete') == 'true':
+        elif note.noti_type == 'befriend' and self.get_argument('accept', 'false') == 'true':
+            friend = self.session.query(User).filter_by(email=note.sender).one()
+            self.current_user._followers.append(friend)
+            friend.notify('message', '{.name} has accepted your friend request'
+                          .format(self.current_user))
+            self.current_user.notifications.remove(note)
+            self.session.commit()
+        elif note.noti_type == 'share' and self.get_argument('accept', 'false') == 'true':
+            task = self.session.query(Task).filter_by(task_id=note.task_id).one()
+            sender = self.session.query(User).filter_by(email=note.sender).one()
+            self.current_user.tasks.append(task)
+            self.current_user.notify('message', "You have accepted the task '{.name}'".
+                                     format(task))
+            sender.notify('message', "{.name} has accepted the task '{.name}'"
+                          .format(self.current_user, task))
             self.current_user.notifications.remove(note)
             self.session.commit()
         self.redirect('/')
@@ -197,5 +234,6 @@ class InviteHandler(BaseHandler):
         self.redirect('/')
 
 if __name__ == '__main__':
-    CyclenceApp().listen(int(os.getenv('CYCLENCE_TORNADO_PORT')))
+    debug = os.getenv('DEBUG', 'false').lower() == 'true'
+    CyclenceApp(debug=debug).listen(int(os.getenv('CYCLENCE_TORNADO_PORT')))
     ioloop.IOLoop.instance().start()

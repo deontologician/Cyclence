@@ -58,7 +58,9 @@ form.deleteform {
     float:right;
     display:inline;
 }
-form.deleteform button {
+form.share-form {
+    display: inline;
+    float: left;
 }
 
 ul.notification-list,
