@@ -235,6 +235,18 @@ class Task(CyclenceBase):
             points_per_day = self.points / float(self.decay_length.days)
             return self.points - int(ceil(points_per_day * days_late))
 
+    @property
+    def sort_value(self):
+        r'''A single number that represents the priority of this task.'''
+        if self.is_not_due and not self.allow_early:
+            return 0
+        today = date.today()
+        zero = self.duedate - self.decay_length
+        mult = max(0, (today - zero).days)
+        days_late = max(0, (today - self.duedate).days)
+        return self.points * (mult + days_late) # double count late days
+
+
     def hue(self, completed_on=None):
         '''A tuple representing the color that represents how overdue the item
         is (in HSL notation). Going from green on the duedate to red when the

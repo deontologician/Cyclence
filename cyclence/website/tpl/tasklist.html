@@ -8,7 +8,7 @@
     <th>Points</th>
     <th></th>
   </tr>
-  {% for task in sorted(user.tasks, key=lambda t: t.duedate) %}
+  {% for task in sorted(user.tasks, key=lambda t: t.sort_value, reverse=True) %}
   <tr class="taskrow">
     <td>
       <div style="background-color: hsl({{ task.hue() }});"
