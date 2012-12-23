@@ -1,0 +1,50 @@
+<form method="POST" action="/tasks" class="form-horizontal span4">
+  <legend>Create a new Task</legend>
+  <div class="control-group">
+    <label class="control-label">Task Name</label>
+    <div class="controls">
+      <input type="text" name="taskname" 
+             placeholder="Walk the dog, mow the lawn, etc...">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label">Recurs every</label>
+    <div class="controls">
+      <input type="text" class="input-small" name="length"> days
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label">First due</label>
+    <div class="controls">
+      <input type="text" name="firstdue" value="{{ today.strftime('%Y-%m-%d') }}"
+             class="input-small">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label"> Allow early completion</label>
+    <div class="controls">
+      <input type="checkbox" name="allowearly" checked="checked">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label">Points</label>
+    <div class="controls">
+      <input type="text" value="100" name="points">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label">Tags</label>
+    <div class="controls">
+      <input type="text" name="tags" placeholder="some, comma, separated, tags">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label">Notes</label>
+    <div class="controls">
+      <textarea width="80" name="notes"></textarea>
+    </div>
+  </div>
+  <div class="controls">
+    <button type="submit" class="btn btn-primary">Create Task</button>
+  </div>
+</form>

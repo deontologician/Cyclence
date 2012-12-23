@@ -1,0 +1,36 @@
+<ul class="notification-list">
+  {% for note in user.notifications %}
+  <li title="{{ utils.fmt_time(note.timestamp)}}" 
+    <i
+    {% if note.noti_type == 'error' %}
+    class="label label-warning"><i class="icon-warning-sign icon-white"
+    {% elif note.noti_type == 'share' %}
+    class="label label-success"><i class="icon-gift icon-white"
+    {% elif note.noti_type == 'befriend' %}
+    class="label label-info"><i class="icon-user icon-white"
+    {% elif note.noti_type == 'message' %}
+    class="label label-success"><i class="icon-envelope icon-white"
+    {% else %}
+    class="label label-default"><i class="icon-comment icon-white"
+    {% end %}
+      ></i>
+    {{ note.message }}
+    <form class="form-inline buttonform"
+          action="/notifications/{{note.notification_id}}"
+          method="post">
+      {% if note.noti_type in ['befriend', 'share'] %}
+      <input type="hidden" name="accept" value="true"></input>
+      <button type="submit" class="btn btn-info btn-small">Accept</button>
+      {% end %}
+    </form>
+    <form class="form-inline deleteform"
+          action="/notifications/{{note.notification_id}}"
+          method="post">
+      <input type="hidden" name="delete" value="true"></input>
+      <button type="submit" class="btn btn-link btn-small">
+        <i class="icon-remove-circle icon-white"></i>
+      </button>
+    </form>
+  </li>
+  {% end %}
+</ul>

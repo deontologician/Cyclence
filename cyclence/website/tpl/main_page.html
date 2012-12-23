@@ -1,300 +1,49 @@
-{% from cyclence import utils %}
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Cyclence</title>
-    <link rel="shortcut icon" href="{{ static_url('img/favicon.png') }}">
-    <link rel="apple-touch-icon" href="{{ static_url('img/favicon.png') }}">
-    <link rel="stylesheet" href="{{ static_url('css/bootstrap.css') }}" 
-          type="text/css" media="screen" />
-    <link rel="stylesheet" href="{{ static_url('css/cyclence.css') }}" 
-          type="text/css" media="screen" />
-    <script src="{{ static_url('js/jquery-1.8.1.min.js') }}"></script>
-    <script src="{{ static_url('js/bootstrap-tab.js') }}"></script>
-    <script src="{{ static_url('js/bootstrap-modal.js') }}"></script>
-  </head>
-  <body>
-    <div class="container-fluid">
-      <div class="row-fluid">
-        <div class="span3">
-          <img id="banner-michael"
-               src="{{ static_url('img/Cyclence_Banner.png') }}" alt="Cyclence">
-        </div>
-        <div class="span3 offset6 topper">
-          <img class="gravatar" src="{{ user.gravatar_url }}?s=30&d=retro">
-          <span id="loginname">{{ user.email }}</span> 
-          <a href="/logout" title="Log Out">
-            <i class="icon-off icon-white"></i></a>
-        </div>
-      </div>
-      <div id="main" class="row-fluid">
-        <div class="navbar">
-          <div class="navbar-inner">
-            <ul class="nav">
-              <li class="active"><a href="#tasks" data-toggle="tab">
-                  <i class="icon-tasks"></i> Tasks
-              </a></li>
-              <li><a href="#new-task" data-toggle="tab">
-                  <i class="icon-pencil"></i> New Task 
-              </a></li>
-              <li><a href="#friendspane" data-toggle="tab">
-                  <i class="icon-user"></i> Friends
-              </a></li>
-              <li><a href="#notifications" data-toggle="tab">
-                  <i class="icon-flag"></i> Notifications
-              </a></li>
-            </ul>
-          </div>
-        </div>
-        <div class="fluid-span9 tab-content">
-          <div class="tab-pane row-fluid active" id="tasks">
-            <table class="table fluid-span9">
-              <tr>
-                <th></th>
-                <th>Task</th>
-                <th>Recurs every</th>
-                <th>Due</th>
-                <th>Last Completed</th>
-                <th>Points</th>
-                <th></th>
-              </tr>
-              {% for task in sorted(user.tasks, key=lambda t: t.duedate) %}
-              <tr class="taskrow">
-                <td>
-                  <div style="background-color: hsl({{ task.hue() }});" 
-                       class="indicator"></div>
-                </td>
-                <td>{{ task.name }}</td>
-                <td>{{ utils.time_str(task.length) }} </td>
-                <td><span title="{{utils.date_str(task.duedate)}}">
-                    {{ utils.relative_time(task.duedate) }}</span></td>
-                <td><span title="{{utils.date_str(task.last_completed)}}">
-                  {{ utils.relative_time(task.last_completed) }}</span></td>
-                <td>{{ task.point_worth() }}</td>
-                <td>
-                  <form action="/tasks/{{task.task_id}}/completions/{{today.isoformat()}}"
-                        method="POST" class="form-inline buttonform">
-                    <button type="submit"
-                    {% if task.dueity != 'not due' or task.allow_early %}
-                       class="btn btn-success btn-small"
-                    {% elif task.dueity == 'not due' and task.last_completed != today %}
-                       class="btn btn-inverse btn-small"
-                       title="This task isn't due yet!"
-                    {% elif task.last_completed == today %}
-                       disabled
-                       title="You already completed this today"
-                       class="btn btn-inverse btn-small"
-                    {% else %}
-                       title="I don't know how truth tables work"
-                       class="btn btn-danger btn-small"
-                    {% end %}
-                    >
-                      <i class="icon-ok icon-white"></i> Complete
-                    </button>
-                  </form>
-                  <!-- Button to trigger modal -->
-                  <a href="#modal-{{task.task_id}}" role="button" class="btn btn-small"
-                     data-toggle="modal"><i class="icon-plus-sign"></i></a>
-                  <!-- Modal -->
-                  <div id="modal-{{task.task_id}}" class="modal hide fade"
-                       tabindex="-1" role="dialog"
-                       aria-labelledby="myModalLabel" 
-                       aria-hidden="true">
-                    <div class="modal-header">
-                      <button type="button" class="close"
-                              data-dismiss="modal" aria-hidden="true">
-                        <i class="icon-remove"></i></button>
-                      <h3>{{task.name}}</h3>
-                      <p>
-                        {% for tag in task.tags %}
-                        <span class="label label-info">
-                          <i class="icon-tag icon-white"></i> {{tag}}</span>
-                        {% end %}
-                      </p>
-                        <dl class="dl-horizontal">
-                          <dt>Started on</dt><dd>{{utils.date_str(task.first_due)}}</dd>
-                          <dt>Recurs Every</dt><dd>{{utils.time_str(task.length)}}</dd>
-                          <dt>Points</dt><dd>{{task.points}}</dd>
-                          <dt>Currently</dt><dd>{{task.dueity}}</dd>
-                          {% if task.allow_early %}
-                          <dt></dt><dd><em>Can be completed early</em></dd>
-                          {% else %}
-                          <dt></dt><dd><em>Shouldn't be completed early</em></dd>
-                          {% end %}
-                        </dl>
-                    </div>
-                    <div class="modal-body">
-                      <p><em>{{task.notes}}</em></p>
-                      {% if len(list(task.completions)) > 0 %}
-                      <table>
-                        <tr>
-                          <th>Completed On</th>
-                          <th>Days Late</th>
-                          <th>Completed By</th>
-                          <th>Points Earned</th>
-                        </tr>
-                        {% for completion in reversed(list(task.completions)) %}
-                        <tr>
-                          <td>{{utils.date_str(completion.completed_on)}}</td>
-                          <td>{{completion.days_late}}</td>
-                          <td>{{completion.completer.name}}</td>
-                          <td>{{completion.points_earned}}</td>
-                        </tr>
-                        {% end %}
-                      </table>
-                      {% else %}
-                      <em>This task has never been completed</em>
-                      {% end %}
-                      {% if len(task.users) > 1 %}
-                      Shared by:
-                      {% for usr in task.users %}
-                      <span class="label">{{usr.name}}</span>
-                      {% end %}
-                      {% end %}
-                    </div>
-                    <div class="modal-footer">
-                      {% set shareables = set(user.friends) - set(task.users) %}
-                      {% if len(shareables) %}
-                      <form class="form-inline share-form"
-                            action="/tasks/{{task.task_id}}/share"
-                            method="POST">
-                          {% if len(shareables) > 1 %}
-                          <label>Share this task with</label>
-                          <div class="input-append">
-                          <select name="friend" class="input-medium">
-                            {% for friend in shareables %}
-                            <option value="{{friend.email}}">{{friend.name}}</option>
-                            {% end %}
-                          </select>
-                          <button type="submit" class="btn btn-info">
-                            <i class="icon-gift icon-white"></i>
-                          </button>
-                          </div>
-                          {% elif len(shareables) == 1 %}
-                          <label>Share this task with {{user.friends[0].name}}</label>
-                          <input type="hidden" name="friend"
-                                 value="{{user.friends[0].email}}"></input>
-                          <button type="submit" class="btn btn-info btn-small">
-                            <i class="icon-gift icon-white"></i>
-                          </button>
-                          {% end %}
-                      </form>
-                      {% end %}
-                    </div>
-                  </div>
-                </td>
-                <td>
-                </td>
-              </tr>
-              {% end %}
-            </table>
-          </div>
-          <div class="tab-pane row-fluid" id="new-task">
-            <form method="POST" action="/tasks" class="form-horizontal span4">
-              <legend>Create a new Task</legend>
-              <div class="control-group">
-                <label class="control-label">Task Name</label>
-                <div class="controls">
-                  <input type="text" name="taskname" 
-                         placeholder="Walk the dog, mow the lawn, etc...">
-                </div>
-              </div>
-              <div class="control-group">
-                <label class="control-label">Recurs every</label>
-                <div class="controls">
-                  <input type="text" class="input-small" name="length"> days
-                </div>
-              </div>
-              <div class="control-group">
-                <label class="control-label">First due</label>
-                <div class="controls">
-                  <input type="text" name="firstdue" value="{{ today.strftime('%Y-%m-%d') }}"
-                         class="input-small">
-                </div>
-              </div>
-              <div class="control-group">
-                <label class="control-label"> Allow early completion</label>
-                <div class="controls">
-                  <input type="checkbox" name="allowearly" checked="checked">
-                </div>
-              </div>
-              <div class="control-group">
-                <label class="control-label">Points</label>
-                <div class="controls">
-                  <input type="text" value="100" name="points">
-                </div>
-              </div>
-              <div class="control-group">
-                <label class="control-label">Tags</label>
-                <div class="controls">
-                  <input type="text" name="tags" placeholder="some, comma, separated, tags">
-                </div>
-              </div>
-              <div class="control-group">
-                <label class="control-label">Notes</label>
-                <div class="controls">
-                  <textarea width="80" name="notes"></textarea>
-                </div>
-              </div>
-              <div class="controls">
-                <button type="submit" class="btn btn-primary">Create Task</button>
-              </div>
-            </form>
-          </div>
-          <div class="tab-pane row-fluid" id="friendspane">
-            <ul class="friend-list">
-            {% for friend in user.friends %}
-            <li><img class="gravatar" src="{{ friend.gravatar_url }}?s=30&d=retro">
-              {{ friend.name}} &mdash; {{ friend.email }}</li>
-            {% end %}
-            <li>
-              <form action="/invite" class="form-inline" method="post">
-                <label>Invite a friend <input name="email"></input></label>
-                <button type="submit" class="btn btn-primary btn-small">Invite</button>
-              </form>
-            </li>
-            </ul>
-          </div>
-          <div class="tab-pane row-fluid" id="notifications">
-            <ul class="notification-list">
-              {% for note in user.notifications %}
-              <li title="{{ utils.fmt_time(note.timestamp)}}" 
-                <i
-                {% if note.noti_type == 'error' %}
-                class="label label-warning"><i class="icon-warning-sign icon-white"
-                {% elif note.noti_type == 'share' %}
-                class="label label-success"><i class="icon-gift icon-white"
-                {% elif note.noti_type == 'befriend' %}
-                class="label label-info"><i class="icon-user icon-white"
-                {% elif note.noti_type == 'message' %}
-                class="label label-success"><i class="icon-envelope icon-white"
-                {% else %}
-                class="label label-default"><i class="icon-comment icon-white"
-                {% end %}
-                   ></i>
-                {{ note.message }}
-                <form class="form-inline buttonform"
-                      action="/notifications/{{note.notification_id}}"
-                      method="post">
-                  {% if note.noti_type in ['befriend', 'share'] %}
-                  <input type="hidden" name="accept" value="true"></input>
-                  <button type="submit" class="btn btn-info btn-small">Accept</button>
-                  {% end %}
-                </form>
-                <form class="form-inline deleteform"
-                      action="/notifications/{{note.notification_id}}"
-                      method="post">
-                  <input type="hidden" name="delete" value="true"></input>
-                  <button type="submit" class="btn btn-link btn-small">
-                    <i class="icon-remove-circle icon-white"></i>
-                  </button>
-                </form>
-              </li>
-              {% end %}
-            </ul>
-          </div>
-        </div>
-      </div>
+{% extends 'master.html' %}
+{% block contents %}
+<div class="row-fluid">
+  <div class="span3">
+    <img id="banner-michael"
+         src="{{ static_url('img/Cyclence_Banner.png') }}" alt="Cyclence">
+  </div>
+  <div class="span3 offset6 topper">
+    <img class="gravatar" src="{{ user.gravatar_url }}?s=30&d=retro">
+    <span id="loginname">{{ user.email }}</span> 
+    <a href="/logout" title="Log Out">
+      <i class="icon-off icon-white"></i></a>
+  </div>
+</div>
+<div id="main" class="row-fluid">
+  <div class="navbar">
+    <div class="navbar-inner">
+      <ul class="nav">
+        <li class="active"><a href="#tasklist" data-toggle="tab">
+            <i class="icon-tasks"></i> Tasks
+        </a></li>
+        <li><a href="#newtask" data-toggle="tab">
+            <i class="icon-pencil"></i> New Task 
+        </a></li>
+        <li><a href="#friendlist" data-toggle="tab">
+            <i class="icon-user"></i> Friends
+        </a></li>
+        <li><a href="#notifications" data-toggle="tab">
+            <i class="icon-flag"></i> Notifications
+        </a></li>
+      </ul>
     </div>
-  </body>
-</html>
+  </div>
+  <div class="fluid-span9 tab-content">
+    <div class="tab-pane row-fluid active" id="tasklist">
+      {% include "tasklist.html" %}
+    </div>
+    <div class="tab-pane row-fluid" id="newtask">
+      {% include "newtask.html" %}
+    </div>
+    <div class="tab-pane row-fluid" id="friendlist">
+      {% include "friendlist.html" %}
+    </div>
+    <div class="tab-pane row-fluid" id="notifications">
+      {% include "notifications.html" %}
+    </div>
+  </div>
+</div>
+{% end %}

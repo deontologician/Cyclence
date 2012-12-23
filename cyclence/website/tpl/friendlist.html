@@ -1,0 +1,12 @@
+<ul class="friend-list">
+  {% for friend in user.friends %}
+  <li><img class="gravatar" src="{{ friend.gravatar_url }}?s=30&d=retro">
+    {{ friend.name}} &mdash; {{ friend.email }}</li>
+  {% end %}
+  <li>
+    <form action="/invite" class="form-inline" method="post">
+      <label>Invite a friend <input name="email"></input></label>
+      <button type="submit" class="btn btn-primary btn-small">Invite</button>
+    </form>
+  </li>
+</ul>

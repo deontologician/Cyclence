@@ -11,6 +11,10 @@ body {
 #loginname {
     color: white;
 }
+
+#banner-michael { 
+    height: 120px;
+}
 .icon-off:hover {
     -webkit-filter: brightness(0%) hue-rotate(90deg);
 }

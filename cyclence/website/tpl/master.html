@@ -1,0 +1,21 @@
+{% from cyclence import utils %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>{% block title %}Cyclence{% end %}</title>
+    <link rel="shortcut icon" href="{{ static_url('img/favicon.png') }}">
+    <link rel="apple-touch-icon" href="{{ static_url('img/favicon.png') }}">
+    <link rel="stylesheet" href="{{ static_url('css/bootstrap.css') }}" 
+          type="text/css" media="screen" />
+    <link rel="stylesheet" href="{{ static_url('css/cyclence.css') }}" 
+          type="text/css" media="screen" />
+    <script src="{{ static_url('js/jquery-1.8.3.min.js') }}"></script>
+    <script src="{{ static_url('js/bootstrap-tab.js') }}"></script>
+    <script src="{{ static_url('js/bootstrap-modal.js') }}"></script>
+  </head>
+  <body>
+    <div class="container-fluid">
+      {% block contents %}{% end %}
+    </div>
+  </body>
+</html>
