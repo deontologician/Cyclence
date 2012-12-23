@@ -278,7 +278,8 @@ class User(CyclenceBase):
     def share_task(self, task, sharer):
         r'''Share a task with this user'''
         self.notify('share', '{.name} has shared the task "{.name}" with you'
-                    .format(sharer, task), sender=sharer.email)
+                    .format(sharer, task), sender=sharer.email,
+                    task_id=task.task_id)
 
     def befriend(self, sender):
         self.notify('befriend', '{.name} wants to be friends!'.format(sender),

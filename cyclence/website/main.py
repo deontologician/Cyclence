@@ -111,10 +111,7 @@ class TaskShareHandler(BaseHandler):
             friend = self.session.query(User).filter_by(email=email).one()
             if friend not in self.current_user.friends:
                 raise Exception('Cannot share a task with someone who is not a friend.')
-            friend.share_task('share', '{.name} has shared the task "{.name}" with you'.
-                              format(self.current_user, task),
-                              task=task,
-                              sharer=self.current_user)
+            friend.share_task(task=task, sharer=self.current_user)
             self.session.commit()
         except Exception as e:
             print(str(e))
