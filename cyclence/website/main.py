@@ -157,7 +157,8 @@ class MainHandler(BaseHandler):
             self.session.refresh(self.current_user)
             self.render('main_page.html',
                         user=self.current_user,
-                        today=date.today())
+                        today=date.today(),
+                        tab=self.get_argument('tab', None))
 
 class GoogleHandler(BaseHandler, auth.GoogleMixin):
     @web.asynchronous
@@ -212,7 +213,7 @@ class NotificationHandler(BaseHandler):
                           .format(self.current_user, task))
             self.current_user.notifications.remove(note)
             self.session.commit()
-        self.redirect('/')
+        self.redirect('/?tab=notifications')
 
 class InviteHandler(BaseHandler):
     @web.authenticated

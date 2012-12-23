@@ -16,7 +16,7 @@
   <div class="navbar">
     <div class="navbar-inner">
       <ul class="nav">
-        <li class="active"><a href="#tasklist" data-toggle="tab">
+        <li {% if not tab %}class="active" {% end %}><a href="#tasklist" data-toggle="tab">
             <i class="icon-tasks"></i> Tasks
         </a></li>
         <li><a href="#newtask" data-toggle="tab">
@@ -25,14 +25,20 @@
         <li><a href="#friendlist" data-toggle="tab">
             <i class="icon-user"></i> Friends
         </a></li>
-        <li><a href="#notifications" data-toggle="tab">
+        <li {% if tab == 'notifications' %} class="active" {% end %} >
+          <a href="#notifications" data-toggle="tab">
             <i class="icon-flag"></i> Notifications
         </a></li>
       </ul>
     </div>
   </div>
   <div class="fluid-span9 tab-content">
-    <div class="tab-pane row-fluid active" id="tasklist">
+    <div {% if not tab %}
+         class="tab-pane row-fluid active"
+         {% else %}
+         class="tab-pane row-fluid"
+         {% end %}
+         id="tasklist">
       {% include "tasklist.html" %}
     </div>
     <div class="tab-pane row-fluid" id="newtask">
@@ -41,7 +47,12 @@
     <div class="tab-pane row-fluid" id="friendlist">
       {% include "friendlist.html" %}
     </div>
-    <div class="tab-pane row-fluid" id="notifications">
+    <div {% if tab == 'notifications' %}
+         class="tab-pane row-fluid active"
+         {% else %}
+         class="tab-pane row-fluid"
+         {% end %}
+         id="notifications">
       {% include "notifications.html" %}
     </div>
   </div>
