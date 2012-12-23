@@ -222,8 +222,12 @@ class Task(CyclenceBase):
         worth, given the `duedate`, when it was `completed_on`, the
         `decay_length` and the `max_points` the task is worth'''
         completed_on = completed_on or date.today()
-        if self.duedate >= completed_on:
-            return self.points
+        if self.duedate > completed_on:
+            # if allowed early, full points, otherwise no points for early completion
+            if self.duedate > completed_on and not self.allow_early:
+                return 0
+            else:
+                return self.points
         elif completed_on >= self.duedate + self.decay_length:
             return 0
         else:
@@ -238,13 +242,17 @@ class Task(CyclenceBase):
         hsl = '{},{}%,{}%'
         completed_on = completed_on or date.today()
         days_late = (completed_on - self.duedate).days
-        percent_due = (days_late / float(self.decay_length.days))
+        if days_late < 0:
+            percent_due = (self.decay_length.days + days_late) / float(self.decay_length.days)
+        else:
+            percent_due = days_late / float(self.decay_length.days)
         if days_late < 0 and not self.allow_early:
-            return hsl.format(0, 0, 75) #grey
+            return hsl.format(0, 0, 0) #black,
         elif days_late < 0 and self.allow_early:
             #somewhere between grey and green
-            s = percent_due * 100
-            return hsl.format(120, s, 75)
+            s = int(percent_due * 100)
+            l = 75 - int(percent_due * 25)
+            return hsl.format(120, s, l)
         elif days_late >= self.decay_length.days:
             return hsl.format(0, 100, 50) #red
         else:

@@ -1,0 +1,86 @@
+<div id="modal-{{task.task_id}}" class="modal hide fade"
+     tabindex="-1" role="dialog"
+     aria-labelledby="myModalLabel" 
+     aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close"
+            data-dismiss="modal" aria-hidden="true">
+      <i class="icon-remove"></i></button>
+    <h3 style="color: hsl({{task.hue()}})"> {{task.name}} </h3>
+    <p>
+      {% for tag in task.tags %}
+      <span class="label label-info">
+        <i class="icon-tag icon-white"></i> {{tag}}</span>
+      {% end %}
+    </p>
+    <dl class="dl-horizontal">
+      <dt>Started on</dt><dd>{{utils.date_str(task.first_due)}}</dd>
+      <dt>Recurs Every</dt><dd>{{utils.time_str(task.length)}}</dd>
+      <dt>Points</dt><dd>{{task.points}}</dd>
+      <dt>Currently</dt><dd>{{task.dueity}}</dd>
+      {% if task.allow_early %}
+      <dt></dt><dd>Can be completed early</dd>
+      {% else %}
+      <dt></dt><dd><em>Shouldn't be completed early</em></dd>
+      {% end %}
+    </dl>
+  </div>
+  <div class="modal-body">
+    <p><em>{{task.notes}}</em></p>
+    {% if len(list(task.completions)) > 0 %}
+    <table>
+      <tr>
+        <th>Completed On</th>
+        <th>Days Late</th>
+        <th>Completed By</th>
+        <th>Points Earned</th>
+      </tr>
+      {% for completion in reversed(list(task.completions)) %}
+      <tr>
+        <td>{{utils.date_str(completion.completed_on)}}</td>
+        <td>{{completion.days_late}}</td>
+        <td>{{completion.completer.name}}</td>
+        <td>{{completion.points_earned}}</td>
+      </tr>
+      {% end %}
+    </table>
+    {% else %}
+    <em>This task has never been completed</em>
+    {% end %}
+    {% if len(task.users) > 1 %}
+    Shared by:
+    {% for usr in task.users %}
+    <span class="label">{{usr.name}}</span>
+    {% end %}
+    {% end %}
+  </div>
+  <div class="modal-footer">
+    {% set shareables = set(user.friends) - set(task.users) %}
+    {% if len(shareables) %}
+    <form class="form-inline share-form"
+          action="/tasks/{{task.task_id}}/share"
+          method="POST">
+      {% if len(shareables) > 1 %}
+      <label>Share this task with</label>
+      <div class="input-append">
+        <select name="friend" class="input-medium">
+          {% for friend in shareables %}
+          <option value="{{friend.email}}">{{friend.name}}</option>
+          {% end %}
+        </select>
+        <button type="submit" class="btn btn-info">
+          <i class="icon-gift icon-white"></i>
+        </button>
+      </div>
+      {% elif len(shareables) == 1 %}
+      <label>Share this task with {{user.friends[0].name}}</label>
+      <input type="hidden" name="friend"
+             value="{{user.friends[0].email}}"></input>
+      <button type="submit" class="btn btn-info btn-small">
+        <i class="icon-gift icon-white"></i>
+      </button>
+      {% end %}
+    </form>
+    {% end %}
+  </div>
+</div>
