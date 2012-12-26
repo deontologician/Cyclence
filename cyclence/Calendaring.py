@@ -45,6 +45,12 @@ class Tag(CyclenceBase):
         self.task_id = task_id
         self.tag_name = tag_name
 
+    def __str__(self):
+        return self.tag_name
+
+    def __repr__(self):
+        return 'Tag({}, {})'.format(self.task_id, self.tag_name)
+
 class Completion(CyclenceBase):
     r'''Represents a completion of a task'''
     __tablename__ = 'completions'

@@ -44,7 +44,7 @@ class BaseHandler(web.RequestHandler):
         if not hasattr(self, '_json'):
             self._json = escape.json_decode(self.request.body)
         return self._json
-    
+
     @property
     def session(self):
         return self.application.session
@@ -56,6 +56,12 @@ class BaseHandler(web.RequestHandler):
                 return None
             self._user = self.session.query(orm.User).filter(orm.User.email == email).first()
         return self._user
+
+    def redirect(self, url, permanent=False, status=302):
+        try:
+            web.RequestHandler.redirect(self, url.url, permanent, status)
+        except AttributeError:
+            web.RequestHandler.redirect(self, url, permanent, status)
 
 def build_handlers(*args):
     return [(h.url, h) for h in args]
@@ -103,14 +109,14 @@ class Login(BaseHandler):
 
     def get(self):
         self.render('login.html')
-     
+
 class Logout(BaseHandler):
     url = ojoin(Main.url, 'logout')
 
     @web.authenticated
     def get(self):
         self.clear_cookie('user')
-        self.redirect(Login.url)
+        self.redirect(Login)
 
 class Google(BaseHandler, auth.GoogleMixin):
     url = ojoin(Main.url, "auth", "google")
@@ -133,11 +139,11 @@ class Google(BaseHandler, auth.GoogleMixin):
                        lastname=user.get('last_name'))
             self.session.add(usr)
             self.session.commit()
-        self.redirect(Main.url)
+        self.redirect(Main)
 
 class Tasks(BaseHandler):
     '''Allows creation of tasks'''
-    
+
     url = ojoin(Main.url, "tasks")
 
     @web.authenticated
@@ -160,7 +166,7 @@ class Tasks(BaseHandler):
         t.user_email = self.current_user.email
         self.current_user.tasks.append(t)
         self.session.commit()
-        self.redirect(Tasks.url)
+        self.redirect(Tasks)
 
 class Task(BaseHandler):
     r'''Handles updates to a task'''
@@ -176,12 +182,11 @@ class NewTask(BaseHandler):
 
     def get(self):
         self.render('newtask.html')
-    
 
 
 class ShareTask(BaseHandler):
     r'''Handles sharing tasks'''
-    
+
     url = ojoin(Task.url, "share")
 
     @web.authenticated
@@ -232,7 +237,7 @@ class DeleteTask(BaseHandler):
         self.redirect(Tasks)
 
 class Completion(BaseHandler):
-    
+
     url = ojoin(Task.url, "completions", "({})".format(DATE_REGEX))
 
     @web.authenticated
@@ -244,13 +249,13 @@ class Completion(BaseHandler):
             task.complete(self.current_user, parsedate(completed_on))
             self.session.commit()
         else:
-            self.current_user.notify('error', 
+            self.current_user.notify('error',
                                      "You already completed '{}' on {}"
-                                     .format(task.name, 
+                                     .format(task.name,
                                              date_str(completion_date)),
                                      task.task_id)
             self.session.commit()
-        self.redirect(Main.url)
+        self.redirect(Main)
 
 
 class Notifications(BaseHandler):
@@ -263,9 +268,9 @@ class Notifications(BaseHandler):
         self.render('notifications.html')
 
 class Notification(BaseHandler):
-    
+
     url = ojoin(Notifications.url, "({})".format(UUID_REGEX))
-    
+
     @web.authenticated
     @rollback_on_failure
     def post(self, notification_id):
@@ -293,26 +298,26 @@ class Notification(BaseHandler):
                           .format(self.current_user, task))
             self.current_user.notifications.remove(note)
             self.session.commit()
-        self.redirect(Notifications.url)
+        self.redirect(Notifications)
 
 class Friends(BaseHandler):
     '''Handles the list of friends'''
     url = ojoin(Main.url, "friends")
-    
+
     @web.authenticated
     def get(self):
         self.render('friendlist.html')
 
 class Invite(BaseHandler):
-    
+
     url = ojoin(Main.url, "invite")
-    
+
     @web.authenticated
     @rollback_on_failure
     def post(self):
         email = self.get_argument('email')
         if email is None:
-            redirect(FriendList.url)
+            redirect(FriendList)
             return
         potential_friend = self.session.query(orm.User).filter_by(email=email).one()
         if potential_friend == self.current_user:
@@ -321,7 +326,7 @@ class Invite(BaseHandler):
         else:
             potential_friend.befriend(self.current_user)
         self.session.commit()
-        self.redirect('/')
+        self.redirect(FriendList)
 
 if __name__ == '__main__':
     debug = os.getenv('DEBUG', 'false').lower() == 'true'
