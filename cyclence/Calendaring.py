@@ -83,8 +83,10 @@ class Task(CyclenceBase):
 
     users = relationship('User', secondary=usertasks,
                          backref='tasks')
-    _tags = relationship('Tag', collection_class=set)
-    completions = relationship("Completion", lazy="dynamic", backref="task")
+    _tags = relationship('Tag', collection_class=set,
+                         cascade="all, delete, delete-orphan")
+    completions = relationship("Completion", lazy="dynamic", backref="task",
+                               cascade="all, delete, delete-orphan")
 
     def __init__(self, name, length, first_due=None, allow_early=True,
                  points=100, decay_length=None, tags=None, notes=None):

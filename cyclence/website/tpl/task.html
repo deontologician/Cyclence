@@ -82,5 +82,17 @@
       {% end %}
     </form>
     {% end %}
+    <form class="form-inline buttonform"
+          action="/tasks/{{task.task_id}}/delete"
+          method="post">
+      <input type="hidden" name="delete" value="true"></input>
+      <button type="submit" class="btn btn-danger">
+        {% if len(task.users) > 1 %}
+        Remove me from this task
+        {% else %}
+        Delete this task
+        {% end %}
+      </button>
+    </form>
   </div>
 </div>

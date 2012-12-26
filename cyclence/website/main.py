@@ -6,6 +6,7 @@ from os.path import join as ojoin
 from base64 import urlsafe_b64decode as b64decode
 from uuid import uuid4
 from datetime import date, datetime
+from functools import wraps
 
 from tornado import ioloop, web, auth, escape
 from tornado.httpclient import HTTPError
@@ -19,6 +20,16 @@ UUID_REGEX = r'[\dA-Fa-f]{8}-[\dA-Fa-f]{4}-[\dA-Fa-f]{4}'\
           '-[\dA-Fa-f]{4}-[\dA-Fa-f]{12}'
 
 DATE_REGEX = r'[\d]{4}-[\d]{2}-[\d]{2}'
+
+def rollback_on_failure(method):
+    @wraps(method)
+    def wrapped(self, *args, **kwargs):
+        try:
+            method(self, *args, **kwargs)
+        except:
+            self.session.rollback()
+            raise
+    return wrapped
 
 def parsedate(datestr):
     'Parses a date in ISO8601 format'
@@ -60,7 +71,8 @@ class CyclenceApp(web.Application):
                                   Tasks,
                                   Task,
                                   NewTask,
-                                  TaskShare,
+                                  ShareTask,
+                                  DeleteTask,
                                   Completion,
                                   Notifications,
                                   Notification,
@@ -134,6 +146,7 @@ class Tasks(BaseHandler):
         self.render('tasklist.html')
 
     @web.authenticated
+    @rollback_on_failure
     def post(self):
         '''Adds a task to the current user'''
         t = orm.Task(self.get_argument('taskname'),
@@ -152,23 +165,27 @@ class Tasks(BaseHandler):
 class Task(BaseHandler):
     r'''Handles updates to a task'''
 
-    url = ojoin(Main.url, "tasks", "({})".format(UUID_REGEX))
+    url = ojoin(Tasks.url, "({})".format(UUID_REGEX))
+
+    #currently no methods
 
 class NewTask(BaseHandler):
     r'''Allows creating a new task'''
-    
-    url = ojoin(Main.url, 'newtask')
-    
+
+    url = ojoin(Tasks.url, 'new')
+
     def get(self):
         self.render('newtask.html')
     
 
-class TaskShare(BaseHandler):
+
+class ShareTask(BaseHandler):
     r'''Handles sharing tasks'''
     
     url = ojoin(Task.url, "share")
 
     @web.authenticated
+    @rollback_on_failure
     def post(self, task_id):
         try:
             task = self.session.query(orm.Task).filter_by(task_id=task_id).one()
@@ -185,13 +202,41 @@ class TaskShare(BaseHandler):
         except Exception as e:
             print(str(e))
         finally:
-            self.redirect('/')
+            self.redirect(Tasks)
+
+class DeleteTask(BaseHandler):
+
+    url = ojoin(Task.url, "delete")
+
+    @web.authenticated
+    def get(self, task_id):
+        self.redirect(Tasks)
+
+    @web.authenticated
+    @rollback_on_failure
+    def post(self, task_id):
+        if self.get_argument('delete', 'false') == 'true':
+            task = self.session.query(orm.Task).filter(orm.Task.task_id == task_id).one()
+            if len(task.users) > 1 and self.current_user in task.users:
+                task.users.remove(self.current_user)
+                self.current_user.notify('message',
+                                         "You have been removed from the task '{.name}'"
+                                         .format(task))
+            elif len(task.users) == 1 and self.current_user in task.users:
+                self.session.delete(task)
+                self.current_user.notify('message',
+                                         "The task '{.name}' has been deleted.".format(task))
+            self.session.commit()
+        else:
+            print("Didn't get the expected argument delete=true. Hacking?")
+        self.redirect(Tasks)
 
 class Completion(BaseHandler):
     
     url = ojoin(Task.url, "completions", "({})".format(DATE_REGEX))
 
     @web.authenticated
+    @rollback_on_failure
     def post(self, task_id, completed_on):
         completion_date = parsedate(completed_on)
         task = self.session.query(orm.Task).filter(orm.Task.task_id == task_id).one()
@@ -222,8 +267,10 @@ class Notification(BaseHandler):
     url = ojoin(Notifications.url, "({})".format(UUID_REGEX))
     
     @web.authenticated
-    def post(self, notification_id): 
-        note = self.session.query(orm.Notification).filter_by(notification_id=notification_id).one()
+    @rollback_on_failure
+    def post(self, notification_id):
+        note = self.session.query(orm.Notification)\
+            .filter_by(notification_id=notification_id).one()
         if note not in self.current_user.notifications:
             pass # will just redirect
         elif self.get_argument('delete', None) == 'true':
@@ -261,6 +308,7 @@ class Invite(BaseHandler):
     url = ojoin(Main.url, "invite")
     
     @web.authenticated
+    @rollback_on_failure
     def post(self):
         email = self.get_argument('email')
         if email is None:
