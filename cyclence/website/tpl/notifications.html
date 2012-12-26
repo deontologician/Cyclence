@@ -1,3 +1,6 @@
+{% extends 'main_page.html' %}
+{% block notifications-active %}active{% end %}
+{% block main-page-content %}
 <ul class="notification-list">
   {% for note in user.notifications %}
   <li title="{{ utils.fmt_time(note.timestamp)}}" 
@@ -34,3 +37,4 @@
   </li>
   {% end %}
 </ul>
+{% end %}

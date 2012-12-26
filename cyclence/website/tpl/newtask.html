@@ -1,3 +1,6 @@
+{% extends 'main_page.html' %}
+{% block newtask-active %}active{% end %}
+{% block main-page-content %}
 <form method="POST" action="/tasks" class="form-horizontal span4">
   <legend>Create a new Task</legend>
   <div class="control-group">
@@ -48,3 +51,4 @@
     <button type="submit" class="btn btn-primary">Create Task</button>
   </div>
 </form>
+{% end %}

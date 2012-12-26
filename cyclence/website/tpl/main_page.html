@@ -14,46 +14,32 @@
 </div>
 <div id="main" class="row-fluid">
   <div class="navbar">
-    <div class="navbar-inner">
+    <div class="navbar-inner">'
       <ul class="nav">
-        <li {% if not tab %}class="active" {% end %}><a href="#tasklist" data-toggle="tab">
+        <li class="{%block tasklist-active %}{% end %}">
+          <a href="/tasks">
             <i class="icon-tasks"></i> Tasks
         </a></li>
-        <li><a href="#newtask" data-toggle="tab">
+        <li class="{%block newtask-active %}{% end %}">
+          <a href="/newtask">
             <i class="icon-pencil"></i> New Task 
         </a></li>
-        <li><a href="#friendlist" data-toggle="tab">
+        <li class="{%block friendlist-active %}{% end %}">
+          <a href="/friends">
             <i class="icon-user"></i> Friends
         </a></li>
-        <li {% if tab == 'notifications' %} class="active" {% end %} >
-          <a href="#notifications" data-toggle="tab">
+        <li class="{%block notifications-active %}{% end %}">
+          <a href="/notifications">
             <i class="icon-flag"></i> Notifications
         </a></li>
       </ul>
     </div>
   </div>
   <div class="fluid-span9 tab-content">
-    <div {% if not tab %}
-         class="tab-pane row-fluid active"
-         {% else %}
-         class="tab-pane row-fluid"
-         {% end %}
-         id="tasklist">
-      {% include "tasklist.html" %}
-    </div>
-    <div class="tab-pane row-fluid" id="newtask">
-      {% include "newtask.html" %}
-    </div>
-    <div class="tab-pane row-fluid" id="friendlist">
-      {% include "friendlist.html" %}
-    </div>
-    <div {% if tab == 'notifications' %}
-         class="tab-pane row-fluid active"
-         {% else %}
-         class="tab-pane row-fluid"
-         {% end %}
-         id="notifications">
-      {% include "notifications.html" %}
+    <div class="tab-pane row-fluid active">
+      {% block main-page-content %}
+      <!-- You dun goofed. -->
+      {% end %}
     </div>
   </div>
 </div>
