@@ -8,11 +8,11 @@
     {% if note.noti_type == 'error' %}
     class="label label-warning"><i class="icon-warning-sign icon-white"
     {% elif note.noti_type == 'share' %}
-    class="label label-success"><i class="icon-gift icon-white"
+    class="label label-default"><i class="icon-gift icon-white"
     {% elif note.noti_type == 'befriend' %}
     class="label label-info"><i class="icon-user icon-white"
     {% elif note.noti_type == 'message' %}
-    class="label label-success"><i class="icon-envelope icon-white"
+    class="label label-default"><i class="icon-envelope icon-white"
     {% else %}
     class="label label-default"><i class="icon-comment icon-white"
     {% end %}
@@ -23,7 +23,7 @@
           method="post">
       {% if note.noti_type in ['befriend', 'share'] %}
       <input type="hidden" name="accept" value="true"></input>
-      <button type="submit" class="btn btn-info btn-small">Accept</button>
+      <button type="submit" class="btn btn-info btn-mini">Accept</button>
       {% end %}
     </form>
     <form class="form-inline deleteform"
