@@ -88,7 +88,7 @@ class CyclenceApp(web.Application):
         settings = dict(
             cookie_secret=os.getenv('CYCLENCE_COOKIE_SECRET'),
             login_url='/login',
-            template_path='tpl',
+            template_path=os.path.join(os.path.dirname(__file__), 'tpl'),
             debug=True if os.getenv('CYCLENCE_DEBUG') == 'true' else False,
             static_path=os.path.join(os.path.dirname(__file__), "../../static"),
             )
