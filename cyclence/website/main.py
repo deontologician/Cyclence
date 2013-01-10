@@ -40,14 +40,23 @@ def parsedate(datestr):
 class BaseHandler(web.RequestHandler):
 
     @property
+    def connection_string(self):
+        try:
+            return self._connection_string
+        except AttributeError:
+            self._connection_string = os.getenv('CYCLENCE_DB_CONNECTION_STRING')
+            return self._connection_string
+
+    def initialize(self, *args, **kwargs):
+        self.session = sessionmaker(bind=create_engine(self.connection_string,
+                                                       echo=debug))()
+
+    @property
     def json(self):
         if not hasattr(self, '_json'):
             self._json = escape.json_decode(self.request.body)
         return self._json
 
-    @property
-    def session(self):
-        return self.application.session
 
     def get_current_user(self):
         if not hasattr(self, '_user'):
@@ -93,8 +102,6 @@ class CyclenceApp(web.Application):
             static_path=os.path.join(os.path.dirname(__file__), "../../static"),
             )
         web.Application.__init__(self, handlers, **settings)
-        connstr = os.getenv('CYCLENCE_DB_CONNECTION_STRING')
-        self.session = sessionmaker(bind=create_engine(connstr, echo=debug))()
 
 class Main(BaseHandler):
     url = "/"
@@ -309,7 +316,7 @@ class Friends(BaseHandler):
         self.render('friendlist.html')
 
 class Invite(BaseHandler):
-
+    '''Handles an invitation to become friends'''
     url = ojoin(Main.url, "invite")
 
     @web.authenticated
