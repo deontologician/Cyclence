@@ -17,6 +17,8 @@
 
 """This module includes much of the core functionality of Cyclence."""
 
+from __future__ import print_function
+
 from datetime import date, timedelta, datetime
 from itertools import count
 from math import ceil
@@ -247,18 +249,11 @@ class Task(CyclenceBase):
         worth, given the `duedate`, when it was `completed_on`, the
         `decay_length` and the `max_points` the task is worth'''
         completed_on = completed_on or date.today()
-        if self.duedate > completed_on:
-            # if allowed early, full points, otherwise no points for early completion
-            if self.duedate > completed_on and not self.allow_early:
-                return 0
-            else:
-                return self.points
-        elif completed_on >= self.duedate + self.decay_length:
+        if self.duedate > completed_on and not self.allow_early:
             return 0
-        else:
-            days_late = (completed_on - self.duedate).days
-            points_per_day = self.points / float(self.decay_length.days)
-            return self.points - int(ceil(points_per_day * days_late))
+        days_off = abs((self.duedate - completed_on).days)
+        points_per_day = self.points / float(self.decay_length.days)
+        return max(0, self.points - int(ceil(points_per_day * days_off)))
 
     @property
     def sort_value(self):
