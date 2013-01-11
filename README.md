@@ -37,4 +37,21 @@ tasks. At all times it is easy to determine what tasks are overdue, what can be
 completed early, and what is fine and shouldn't be completed early (changing
 your oil once a month is both wasteful and expensive!).
 
-Cyclence aims to fulfill a need that current scheduling software does not
+Cyclence aims to fulfill a need that other scheduling software does not.
+
+## License
+
+Copyright 2013 Josh Kuhn
+
+Cyclence is free software: you can redistribute it and/or modify it under
+the terms of the GNU Affero General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option)
+any later version.
+
+Cyclence is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU Affero General Public License for
+more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with Cyclence.  If not, see <http://www.gnu.org/licenses/>.
