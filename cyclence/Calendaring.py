@@ -267,30 +267,6 @@ class Task(CyclenceBase):
         return self.points * (mult + days_late) # double count late days
 
 
-    def hue(self, completed_on=None):
-        '''A tuple representing the color that represents how overdue the item
-        is (in HSL notation). Going from green on the duedate to red when the
-        decay_length is exhausted.'''
-        hsl = '{},{}%,{}%'
-        completed_on = completed_on or date.today()
-        days_late = (completed_on - self.duedate).days
-        if days_late < 0:
-            percent_due = (self.decay_length.days + days_late) / float(self.decay_length.days)
-        else:
-            percent_due = days_late / float(self.decay_length.days)
-        if days_late < 0 and not self.allow_early:
-            return hsl.format(0, 0, 0) #black,
-        elif days_late < 0 and self.allow_early:
-            #somewhere between grey and green
-            s = int(percent_due * 100)
-            l = 75 - int(percent_due * 25)
-            return hsl.format(120, s, l)
-        elif days_late >= self.decay_length.days:
-            return hsl.format(0, 100, 50) #red
-        else:
-            return hsl.format(120 * (1 - percent_due), 100, 50)
-
-
 friendships = Table('friendships', CyclenceBase.metadata,
     Column('email_1', String, ForeignKey('users.email'), primary_key=True),
     Column('email_2', String, ForeignKey('users.email'), primary_key=True)

@@ -19,6 +19,7 @@ along with Cyclence.  If not, see <http://www.gnu.org/licenses/>.
 {% extends 'main_page.html' %}
 {% block tasklist-active %}active{% end %}
 {% block main-page-content %}
+{% from cyclence.utils import hue_string %}
 <table class="table fluid-span9">
   <tr>
     <th></th>
@@ -32,7 +33,7 @@ along with Cyclence.  If not, see <http://www.gnu.org/licenses/>.
   {% for task in sorted(user.tasks, key=lambda t: t.sort_value, reverse=True) %}
   <tr class="taskrow">
     <td>
-      <div style="background-color: hsl({{ task.hue() }});"
+      <div style="background-color: {{ hue_string(task) }};"
            class="indicator"></div>
     </td>
     <td>{{ task.name }}</td>

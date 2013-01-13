@@ -113,3 +113,27 @@ def time_str(length):
             days = 0
 
     return ', '.join(result)
+
+def task_hue(point_worth, max_points, not_due):
+    '''A tuple representing the color that represents how overdue the item
+    is (in HSL notation). Going from green on the duedate to red when the
+    decay_length is exhausted.'''
+    RED = (0, 100, 50)
+    GREEN = (120, 100, 50)
+    BLACK = (0, 0, 0)
+    def interp(start, end, percent):
+        return ((end[0] - start[0]) * percent + start[0],
+                (end[1] - start[1]) * percent + start[1],
+                (end[2] - start[2]) * percent + start[2])
+    today = date.today()
+    percent_due = point_worth / float(max_points)
+    if not_due:
+        return interp(BLACK, GREEN, percent_due)
+    else:
+        return interp(RED, GREEN, percent_due)
+
+
+def hue_string(task):
+    '''Takes a task and returns the css string value for its color'''
+    hue = task_hue(task.point_worth(), task.points, task.dueity == 'not due')
+    return 'hsl({},{}%,{}%)'.format(*hue)

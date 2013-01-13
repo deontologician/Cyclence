@@ -16,6 +16,7 @@ more details.
 You should have received a copy of the GNU Affero General Public License
 along with Cyclence.  If not, see <http://www.gnu.org/licenses/>.
 #}
+{% from cyclence.utils import hue_string %}
 <div id="modal-{{task.task_id}}" class="modal hide fade"
      tabindex="-1" role="dialog"
      aria-labelledby="myModalLabel" 
@@ -24,7 +25,7 @@ along with Cyclence.  If not, see <http://www.gnu.org/licenses/>.
     <button type="button" class="close"
             data-dismiss="modal" aria-hidden="true">
       <i class="icon-remove"></i></button>
-    <h3 style="color: hsl({{task.hue()}})"> {{task.name}} </h3>
+    <h3 style="color: {{hue_string(task)}}"> {{task.name}} </h3>
     <p>
       {% for tag in task.tags %}
       <span class="label label-info">
