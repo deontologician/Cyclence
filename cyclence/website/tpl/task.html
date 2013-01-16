@@ -17,101 +17,144 @@ You should have received a copy of the GNU Affero General Public License
 along with Cyclence.  If not, see <http://www.gnu.org/licenses/>.
 #}
 {% from cyclence.utils import hue_string %}
-<div id="modal-{{task.task_id}}" class="modal hide fade"
-     tabindex="-1" role="dialog"
-     aria-labelledby="myModalLabel" 
-     aria-hidden="true">
-  <div class="modal-header">
-    <button type="button" class="close"
-            data-dismiss="modal" aria-hidden="true">
-      <i class="icon-remove"></i></button>
-    <h3 style="color: {{hue_string(task)}}"> {{task.name}} </h3>
-    <p>
-      {% for tag in task.tags %}
-      <span class="label label-info">
-        <i class="icon-tag icon-white"></i> {{tag}}</span>
-      {% end %}
-    </p>
-    <dl class="dl-horizontal">
-      <dt>Started on</dt><dd>{{utils.date_str(task.first_due)}}</dd>
-      <dt>Recurs Every</dt><dd>{{utils.time_str(task.length)}}</dd>
-      <dt>Points</dt><dd>{{task.points}}</dd>
-      <dt>Currently</dt><dd>{{task.dueity}}</dd>
-      {% if task.allow_early %}
-      <dt></dt><dd>Can be completed early</dd>
-      {% else %}
-      <dt></dt><dd><em>Shouldn't be completed early</em></dd>
-      {% end %}
-    </dl>
-  </div>
-  <div class="modal-body">
-    <p><em>{{task.notes}}</em></p>
-    {% if len(list(task.completions)) > 0 %}
-    <table>
-      <tr>
-        <th>Completed On</th>
-        <th>Days Late</th>
-        <th>Completed By</th>
-        <th>Points Earned</th>
-      </tr>
-      {% for completion in reversed(list(task.completions)) %}
-      <tr>
-        <td>{{utils.date_str(completion.completed_on)}}</td>
-        <td>{{completion.days_late}}</td>
-        <td>{{completion.completer.name}}</td>
-        <td>{{completion.points_earned}}</td>
-      </tr>
-      {% end %}
-    </table>
-    {% else %}
-    <em>This task has never been completed</em>
-    {% end %}
-    {% if len(task.users) > 1 %}
-    Shared by:
-    {% for usr in task.users %}
-    <span class="label">{{usr.name}}</span>
-    {% end %}
-    {% end %}
-  </div>
-  <div class="modal-footer">
-    {% set shareables = set(user.friends) - set(task.users) %}
-    {% if len(shareables) %}
-    <form class="form-inline share-form"
-          action="/tasks/{{task.task_id}}/share"
-          method="POST">
-      {% if len(shareables) > 1 %}
-      <label>Share this task with</label>
-      <div class="input-append">
-        <select name="friend" class="input-medium">
-          {% for friend in shareables %}
-          <option value="{{friend.email}}">{{friend.name}}</option>
+<tr class="taskrow">
+  <td>
+    <div style="background-color: {{ hue_string(task) }};"
+         class="indicator"></div>
+  </td>
+  <td>{{ task.name }}</td>
+  <td>{{ utils.time_str(task.length) }} </td>
+  <td><span title="{{utils.date_str(task.duedate)}}">
+      {{ utils.relative_time(task.duedate) }}</span></td>
+  <td><span title="{{utils.date_str(task.last_completed)}}">
+      {{ utils.relative_time(task.last_completed) }}</span></td>
+  <td>{{ task.point_worth() }}</td>
+  <td>
+    <form action="/tasks/{{task.task_id}}/completions/{{today.isoformat()}}"
+          method="POST" class="form-inline buttonform">
+      <button type="submit"
+              {% if task.dueity != 'not due' or task.allow_early %}
+              class="btn btn-success btn-small"
+              {% elif task.dueity == 'not due' and task.last_completed != today %}
+              class="btn btn-inverse btn-small"
+              title="This task isn't due yet!"
+              {% elif task.last_completed == today %}
+              disabled
+              title="You already completed this today"
+              class="btn btn-inverse btn-small"
+              {% else %}
+              title="I don't know how truth tables work"
+              class="btn btn-danger btn-small"
+              {% end %}
+              >
+        <i class="icon-ok icon-white"></i> Complete
+      </button>
+    </form>
+    <!-- Button to trigger modal -->
+    <a href="#modal-{{task.task_id}}" role="button" class="btn btn-small"
+       data-toggle="modal"><i class="icon-plus-sign"></i></a>
+
+
+    <div id="modal-{{task.task_id}}" class="modal hide fade"
+         tabindex="-1" role="dialog"
+         aria-labelledby="myModalLabel" 
+         aria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close"
+                data-dismiss="modal" aria-hidden="true">
+          <i class="icon-remove"></i></button>
+        <h3 style="color: {{hue_string(task)}}"> {{task.name}} </h3>
+        <p>
+          {% for tag in task.tags %}
+          <span class="label label-info">
+            <i class="icon-tag icon-white"></i> {{tag}}</span>
           {% end %}
-        </select>
-        <button type="submit" class="btn btn-info">
-          <i class="icon-gift icon-white"></i>
-        </button>
+        </p>
+        <dl class="dl-horizontal">
+          <dt>Started on</dt><dd>{{utils.date_str(task.first_due)}}</dd>
+          <dt>Recurs Every</dt><dd>{{utils.time_str(task.length)}}</dd>
+          <dt>Points</dt><dd>{{task.points}}</dd>
+          <dt>Currently</dt><dd>{{task.dueity}}</dd>
+          {% if task.allow_early %}
+          <dt></dt><dd>Can be completed early</dd>
+          {% else %}
+          <dt></dt><dd><em>Shouldn't be completed early</em></dd>
+          {% end %}
+        </dl>
       </div>
-      {% elif len(shareables) == 1 %}
-      <label>Share this task with {{user.friends[0].name}}</label>
-      <input type="hidden" name="friend"
-             value="{{user.friends[0].email}}"></input>
-      <button type="submit" class="btn btn-info btn-small">
-        <i class="icon-gift icon-white"></i>
-      </button>
-      {% end %}
-    </form>
-    {% end %}
-    <form class="form-inline buttonform"
-          action="/tasks/{{task.task_id}}/delete"
-          method="post">
-      <input type="hidden" name="delete" value="true"></input>
-      <button type="submit" class="btn btn-danger">
-        {% if len(task.users) > 1 %}
-        Remove me from this task
+      <div class="modal-body">
+        <p><em>{{task.notes}}</em></p>
+        {% if len(list(task.completions)) > 0 %}
+        <table>
+          <tr>
+            <th>Completed On</th>
+            <th>Days Late</th>
+            <th>Completed By</th>
+            <th>Points Earned</th>
+          </tr>
+          {% for completion in reversed(list(task.completions)) %}
+          <tr>
+            <td>{{utils.date_str(completion.completed_on)}}</td>
+            <td>{{completion.days_late}}</td>
+            <td>{{completion.completer.name}}</td>
+            <td>{{completion.points_earned}}</td>
+          </tr>
+          {% end %}
+        </table>
         {% else %}
-        Delete this task
+        <em>This task has never been completed</em>
         {% end %}
-      </button>
-    </form>
-  </div>
-</div>
+        {% if len(task.users) > 1 %}
+        Shared by:
+        {% for usr in task.users %}
+        <span class="label">{{usr.name}}</span>
+        {% end %}
+        {% end %}
+      </div>
+      <div class="modal-footer">
+        {% set shareables = set(user.friends) - set(task.users) %}
+        {% if len(shareables) %}
+        <form class="form-inline share-form"
+              action="/tasks/{{task.task_id}}/share"
+              method="POST">
+          {% if len(shareables) > 1 %}
+          <label>Share this task with</label>
+          <div class="input-append">
+            <select name="friend" class="input-medium">
+              {% for friend in shareables %}
+              <option value="{{friend.email}}">{{friend.name}}</option>
+              {% end %}
+            </select>
+            <button type="submit" class="btn btn-info">
+              <i class="icon-gift icon-white"></i>
+            </button>
+          </div>
+          {% elif len(shareables) == 1 %}
+          <label>Share this task with {{user.friends[0].name}}</label>
+          <input type="hidden" name="friend"
+                 value="{{user.friends[0].email}}"></input>
+          <button type="submit" class="btn btn-info btn-small">
+            <i class="icon-gift icon-white"></i>
+          </button>
+          {% end %}
+        </form>
+        {% end %}
+        <form class="form-inline buttonform"
+              action="/tasks/{{task.task_id}}/delete"
+              method="post">
+          <input type="hidden" name="delete" value="true"></input>
+          <button type="submit" class="btn btn-danger">
+            {% if len(task.users) > 1 %}
+            Remove me from this task
+            {% else %}
+            Delete this task
+            {% end %}
+          </button>
+        </form>
+      </div>
+    </div>
+
+  </td>
+  <td>
+  </td>
+</tr>

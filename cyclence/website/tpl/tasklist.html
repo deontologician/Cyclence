@@ -30,48 +30,25 @@ along with Cyclence.  If not, see <http://www.gnu.org/licenses/>.
     <th>Points</th>
     <th></th>
   </tr>
-  {% for task in sorted(user.tasks, key=lambda t: t.sort_value, reverse=True) %}
-  <tr class="taskrow">
-    <td>
-      <div style="background-color: {{ hue_string(task) }};"
-           class="indicator"></div>
-    </td>
-    <td>{{ task.name }}</td>
-    <td>{{ utils.time_str(task.length) }} </td>
-    <td><span title="{{utils.date_str(task.duedate)}}">
-        {{ utils.relative_time(task.duedate) }}</span></td>
-    <td><span title="{{utils.date_str(task.last_completed)}}">
-        {{ utils.relative_time(task.last_completed) }}</span></td>
-    <td>{{ task.point_worth() }}</td>
-    <td>
-      <form action="/tasks/{{task.task_id}}/completions/{{today.isoformat()}}"
-            method="POST" class="form-inline buttonform">
-        <button type="submit"
-                {% if task.dueity != 'not due' or task.allow_early %}
-                class="btn btn-success btn-small"
-                {% elif task.dueity == 'not due' and task.last_completed != today %}
-                class="btn btn-inverse btn-small"
-                title="This task isn't due yet!"
-                {% elif task.last_completed == today %}
-                disabled
-                title="You already completed this today"
-                class="btn btn-inverse btn-small"
-                {% else %}
-                title="I don't know how truth tables work"
-                class="btn btn-danger btn-small"
-                {% end %}
-                >
-          <i class="icon-ok icon-white"></i> Complete
-        </button>
-      </form>
-      <!-- Button to trigger modal -->
-      <a href="#modal-{{task.task_id}}" role="button" class="btn btn-small"
-         data-toggle="modal"><i class="icon-plus-sign"></i></a>
-      {% include 'task.html' %}
-    </td>
-    <td>
-    </td>
-  </tr>
+  <tr><th colspan=7>Currently Due</th></tr>
+  {% set tasks = sorted(user.tasks, key=lambda t: t.sort_value,
+                                    reverse=True) %}
+  {% for task in [t for t in tasks if t.dueity != 'not due']%}
+    {% include 'task.html' %}
+  {% end %}
+  <tr><th colspan=7>Due Soon</th></tr>
+  {% for task in [t for t in tasks
+                    if t.dueity == 'not due'
+                       and t.allow_early
+                       and t.point_worth() > 0] %}
+    {% include 'task.html' %}
+  {% end %}
+  <tr><th colspan=7>Not Due</th></tr>
+  {% for task in [t for t in tasks
+                    if t.dueity == 'not due'
+                       and (t.point_worth() == 0
+                            or not t.allow_early)] %}
+    {% include 'task.html' %}
   {% end %}
 </table>
 {% end %}
