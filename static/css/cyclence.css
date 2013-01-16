@@ -45,6 +45,14 @@ footer a:visited {
     color: white;
 }
 
+#scoreboard {
+    color: #fff;
+    font-size: 34pt;
+    padding: 20px;
+    font-weight: bold;
+    text-align:right;
+}
+
 #banner-michael { 
     height: 120px;
 }

@@ -29,7 +29,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.dialects.postgresql import UUID, INTERVAL
 from sqlalchemy.orm import relationship, column_property
-from sqlalchemy import (Column, Integer, String, Boolean, Date, DateTime, 
+from sqlalchemy.orm.session import object_session
+from sqlalchemy import (Column, Integer, String, Boolean, Date, DateTime,
                         ForeignKey, Table, select, func)
 
 from cyclence import utils
@@ -73,13 +74,14 @@ class Tag(CyclenceBase):
 class Completion(CyclenceBase):
     r'''Represents a completion of a task'''
     __tablename__ = 'completions'
-    
+
     task_id = Column(UUID, ForeignKey('tasks.task_id'), primary_key=True)
     completed_on = Column(Date, primary_key=True)
     points_earned = Column(Integer)
     recorded_on = Column(DateTime)
     days_late = Column(Integer)
-    email = Column(String, ForeignKey('users.email'), nullable=False)
+    email = Column(String, ForeignKey('users.email'), nullable=False,
+                   index=True)
 
     completer = relationship('User')
 
@@ -119,10 +121,10 @@ class Task(CyclenceBase):
         `name` is the title of the recurring task
         `length` is a timedelta representing how long this recurrence takes
         `first_due` is the first time this should task should be due
-        `allow_early` is whether this task can be completed before its 
+        `allow_early` is whether this task can be completed before its
             recurrence date
         `points` is how many points this task is worth if completed on time
-        `decay_length` is how long it should be before completing this task is 
+        `decay_length` is how long it should be before completing this task is
             worth 0 points
         `tags` are user defined tags for this task
         `notes` is any notes associated with this task
@@ -145,7 +147,7 @@ class Task(CyclenceBase):
             self.first_due = date.today() + timedelta(1)
         else:
             self.first_due = first_due
-        
+
         if tags:
             self.add_tags(tags)
         self.notes = notes
@@ -183,12 +185,12 @@ class Task(CyclenceBase):
     def is_due(self):
         '''Whether this task is due'''
         return self.dueity == DUE
-            
+
     @property
     def is_overdue(self):
         '''Whether this task is overdue'''
         return self.dueity == OVERDUE
-    
+
     @property
     def is_not_due(self):
         '''Whether this task is not due yet'''
@@ -214,7 +216,7 @@ class Task(CyclenceBase):
                        days_late = (completed_on - self.duedate).days,
                        recorded_on = today,
                        email=completer.email))
-        
+
 
     def __repr__(self):
         return '{name} starts on {date} and recurs every {length}'\
@@ -243,7 +245,7 @@ class Task(CyclenceBase):
         for i in count(1):
             yield self.duedate + i*self.length
 
-    
+
     def point_worth(self, completed_on=None):
         '''Calculates how many points completing the task on the given date is
         worth, given the `duedate`, when it was `completed_on`, the
@@ -275,7 +277,7 @@ friendships = Table('friendships', CyclenceBase.metadata,
 class User(CyclenceBase):
     r'''Represents a user in the system'''
     __tablename__ = 'users'
-    
+
     email = Column(String, primary_key=True)
     name = Column(String)
     firstname = Column(String)
@@ -290,6 +292,11 @@ class User(CyclenceBase):
                                  backref='user',
                                  primaryjoin='User.email == Notification.email',
                                  cascade='all, delete, delete-orphan')
+    @property
+    def total_points(self):
+        r'''Returns the total number of points earned by this user'''
+        return object_session(self).query(func.sum(Completion.points_earned))\
+                                              .filter_by(email=self.email).one()[0]
 
     def share_task(self, task, sharer):
         r'''Share a task with this user'''
@@ -310,7 +317,7 @@ class User(CyclenceBase):
                                                task_id=task_id,
                                                sender=sender,
                                                ))
-    
+
     @property
     def friends(self):
         return self._followers + self._followees
