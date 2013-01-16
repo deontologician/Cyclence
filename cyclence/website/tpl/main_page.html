@@ -25,9 +25,12 @@ along with Cyclence.  If not, see <http://www.gnu.org/licenses/>.
   </div>
   <div class="span3 offset6 topper">
     <img class="gravatar" src="{{ user.gravatar_url }}?s=30&d=retro">
-    <span id="loginname">{{ user.email }}</span> 
+    <span id="loginname">{{ user.email }}</span>
     <a href="/logout" title="Log Out">
       <i class="icon-off icon-white"></i></a>
+    <a class="issue-link"
+       href="https://github.com/deontologician/Cyclence/issues/new">Report Issues</a>
+    <br/>
     <div id="scoreboard">{{ user.total_points }}</div>
   </div>
 </div>

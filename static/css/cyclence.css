@@ -56,6 +56,13 @@ footer a:visited {
 #banner-michael { 
     height: 120px;
 }
+
+.issue-link:link,
+.issue-link:visited {
+    margin-left: 10px;
+    color: #fff;
+    font-size: 8pt;
+}
 .icon-off:hover {
     -webkit-filter: brightness(0%) hue-rotate(90deg);
 }
