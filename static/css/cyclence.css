@@ -57,6 +57,10 @@ footer a:visited {
     height: 120px;
 }
 
+.hero-unit {
+    background-color: white;
+}
+
 .issue-link:link,
 .issue-link:visited {
     margin-left: 10px;

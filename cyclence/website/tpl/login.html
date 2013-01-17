@@ -19,13 +19,39 @@ along with Cyclence.  If not, see <http://www.gnu.org/licenses/>.
 {% extends 'master.html' %}
 {% block contents %}
 <div class="row-fluid">
-  <div class="span6 offset3">
-    <img id="banner-michael"
-         src="{{ static_url('img/Cyclence_Banner.png') }}" alt="Cyclence">
+  <img id="banner-michael"
+       src="{{ static_url('img/Cyclence_Banner.png') }}" alt="Cyclence">
+  <div class="hero-unit span8 offset2">
+    <h2>The Periodic Task Scheduler</h2>
+    <p>Some of our recurring tasks occur on a specific day, and our existing
+    calendar software can easily keep track of them. Things like "Taxes due" or
+    "Pay rent" can be set to a specific day of the month or year, and if you
+    miss the date it doesn't matter because it's coming back around on that same
+    day again next time.</p>
+
+    <p>But many times we wish to keep track of things we need to do regularly,
+    but don't care if it is linked to a particular calendar date. And if we
+    complete the task early or late, we want to be reminded again relative to
+    when we actually completed it, not when we <em>should</em> have completed
+    it.</p>
+
+    <p>Cyclence is designed to keep track of exactly these kinds of tasks, when
+    you last did them, when you should do them next, and how overdue a task may
+    be.</p>
+
+    <p>Examples:</p>
+    <ul>
+      <li>Change your oil</li>
+      <li>Schedule a checkup with the doctor</li>
+      <li>Clean out the fridge</li>
+      <li>Call your parents</li>
+    </ul>
+    <p>
+      Try it out. It's free and will take a massive load off your mind.
+    </p><p>
+      <a class="btn btn-large btn-primary offset4" href="/auth/google">Log in
+        with your Google account</a>
+    </p>
   </div>
-</div>
-<div class="row-fluid">
-  <h2 class="form-signin-heading offset4">You need to log in.</h2>
-  <a class="btn btn-large btn-primary offset4" href="/auth/google">Log in with Google</a>
 </div>
 {% end %}
