@@ -56,17 +56,11 @@ def parsedate(datestr):
 
 class BaseHandler(web.RequestHandler):
 
-    @property
-    def connection_string(self):
-        try:
-            return self._connection_string
-        except AttributeError:
-            self._connection_string = os.getenv('CYCLENCE_DB_CONNECTION_STRING')
-            return self._connection_string
-
     def initialize(self, *args, **kwargs):
-        self.session = sessionmaker(bind=create_engine(self.connection_string,
-                                                       echo=debug))()
+        self.session = sessionmaker(bind=self.application.engine)()
+
+    def on_finish(self):
+        self.session.close()
 
     @property
     def json(self):
@@ -118,7 +112,17 @@ class CyclenceApp(web.Application):
             debug=True if os.getenv('CYCLENCE_DEBUG') == 'true' else False,
             static_path=os.path.join(os.path.dirname(__file__), "../../static"),
             )
+        self.engine = create_engine(self.connection_string, echo=debug)
+
         web.Application.__init__(self, handlers, **settings)
+
+    @property
+    def connection_string(self):
+        try:
+            return self._connection_string
+        except AttributeError:
+            self._connection_string = os.getenv('CYCLENCE_DB_CONNECTION_STRING')
+            return self._connection_string
 
 class Main(BaseHandler):
     url = "/"
@@ -341,7 +345,7 @@ class Invite(BaseHandler):
     def post(self):
         email = self.get_argument('email')
         if email is None:
-            redirect(FriendList)
+            redirect(Friends)
             return
         potential_friend = self.session.query(orm.User).filter_by(email=email).one()
         if potential_friend == self.current_user:
@@ -350,7 +354,7 @@ class Invite(BaseHandler):
         else:
             potential_friend.befriend(self.current_user)
         self.session.commit()
-        self.redirect(FriendList)
+        self.redirect(Friends)
 
 if __name__ == '__main__':
     debug = os.getenv('DEBUG', 'false').lower() == 'true'
