@@ -1,8 +1,10 @@
-=Attributions=
+Attributions
+============
 Parts of Cyclence come from the contributions of some very talented
 people. Below I list the content used, and link to their site if possible.
 
-==Background Patterns==
+Background Patterns
+-------------------
 Obtained from the excellent [subtle patterns](http://subtlepatterns.com) website
 * Escheresque Dark background by [Ste Patten](http://subtlepatterns.com/escheresque-dark/)
 * Argyle background by [Will Monson](http://subtlepatterns.com/argyle/)
@@ -14,7 +16,8 @@ Obtained from the excellent [subtle patterns](http://subtlepatterns.com) website
 * Random Grey Variations background by [Stefan Aleksić](http://www.mentalwarddesign.com/)
 * Cartographer background by [Sam Feyaerts](http://sam.feyaerts.me/)
 
-==Direct Packages Used==
+Direct Packages Used
+--------------------
 * [Tornado web framework](http://tornadoweb.org/)
 * [SQLAlchemy ORM](http://sqlalchemy.org)
 * [Bootstrap](http://twitter.github.com/bootstrap/)
