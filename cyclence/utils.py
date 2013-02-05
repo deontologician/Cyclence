@@ -137,3 +137,8 @@ def hue_string(task):
     '''Takes a task and returns the css string value for its color'''
     hue = task_hue(task.point_worth(), task.points, task.dueity == 'not due')
     return 'hsl({},{}%,{}%)'.format(*hue)
+
+def random_img(background_dir, web_dir):
+    import random, os, os.path
+    files = [f for f in os.listdir(background_dir) if not f.endswith('_@2X.png')]
+    return os.path.join(web_dir, random.choice(files))

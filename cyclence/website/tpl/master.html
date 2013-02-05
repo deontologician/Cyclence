@@ -35,6 +35,12 @@ along with Cyclence.  If not, see <http://www.gnu.org/licenses/>.
           type="text/css" media="screen" />
     <link rel="stylesheet" href="{{ static_url('css/cyclence.css') }}"
           type="text/css" media="screen" />
+    <style>
+      body {
+        background-image: url({{static_url(
+                     utils.random_img('static/backgrounds', 'backgrounds'))}});
+      }
+    </style>
   </head>
   <body>
     <div class="container-fluid">
