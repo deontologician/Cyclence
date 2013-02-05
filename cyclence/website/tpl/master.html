@@ -18,18 +18,22 @@ along with Cyclence.  If not, see <http://www.gnu.org/licenses/>.
 #}
 
 {% from cyclence import utils %}
-{% from datetime import date %}
+{% from datetime import date, datetime, timedelta %}
 {% set today = date.today() %}
 {% set user = current_user %}
 <!DOCTYPE html>
 <html>
   <head>
     <title>{% block title %}Cyclence{% end %}</title>
+    <meta http-equiv="refresh"
+          content="{{ ((datetime(*today.timetuple()[:3]) + timedelta(1)) -
+                        datetime.today()).seconds}}">
+    </meta>
     <link rel="shortcut icon" href="{{ static_url('img/favicon.png') }}">
     <link rel="apple-touch-icon" href="{{ static_url('img/favicon.png') }}">
-    <link rel="stylesheet" href="{{ static_url('css/bootstrap.css') }}" 
+    <link rel="stylesheet" href="{{ static_url('css/bootstrap.css') }}"
           type="text/css" media="screen" />
-    <link rel="stylesheet" href="{{ static_url('css/cyclence.css') }}" 
+    <link rel="stylesheet" href="{{ static_url('css/cyclence.css') }}"
           type="text/css" media="screen" />
   </head>
   <body>
