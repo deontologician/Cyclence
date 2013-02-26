@@ -1,0 +1,50 @@
+{% extends 'main_page.html' %}
+{% block edit-task-active %}active{% end %}
+{% block main-page-content %}
+<form method="POST" action="/tasks/{{task.task_id}}/edit" class="form-horizontal span4">
+  <legend>Editing "{{task.name}}"</legend>
+  <div class="control-group">
+    <label class="control-label">Task Name</label>
+    <div class="controls">
+      <input type="text" name="taskname" value="{{task.name}}">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label">Points</label>
+    <div class="controls">
+      <input type="text" name="points" value="{{task.points}}">
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label">Recurs Every</label>
+    <div class="controls">
+      <input class="input-small" type="text" name="length" value="{{task.length.days}}"> days
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label">Allow Early Completion</label>
+    <div class="controls">
+      <input type="checkbox" name="allowearly"             
+             {{'checked' if task.allow_early else ''}} />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label">Tags</label>
+    <div class="controls">
+      <input type="text" name="tags"             
+             value="{{', '.join(task.tags)}}" />
+    </div>
+  </div>
+  <div class="control-group">
+    <label class="control-label">Notes</label>
+    <div class="controls">
+      <textarea width="80" name="notes">
+        {{task.notes or ''}}
+      </textarea>
+    </div>
+  </div>
+  <div class="controls">
+    <button type="submit" class="btn btn-primary">Submit Changes</button>
+  </div>
+</form>
+{% end %}

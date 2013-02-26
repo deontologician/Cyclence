@@ -157,10 +157,16 @@ class Task(CyclenceBase):
         '''Tags on this task'''
         return {t.tag_name for t in self._tags}
 
+    @tags.setter
+    def tags(self, new_tags):
+        '''Set tags'''
+        self._tags.clear()
+        self.add_tags(new_tags)
+
     def add_tags(self, tags):
         '''Allows adding tags'''
         for tag in tags:
-            t = Tag(self.task_id, tag)
+            t = Tag(self.task_id, tag.strip())
             self._tags.add(t)
 
     def remove_tag(self, tag_name):

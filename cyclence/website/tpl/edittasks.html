@@ -1,0 +1,13 @@
+{% extends 'main_page.html' %}
+{% block edit-task-active %}active{% end %}
+{% block main-page-content %}
+<h2>Pick a Task to Edit</h2>
+{% set tasks = sorted(user.tasks, key=lambda t: t.name) %}
+<p>
+  <ul id="tasks-to-edit">
+  {% for task in tasks %}
+   <li><a href="/tasks/{{ task.task_id }}/edit">{{ task.name }}</a></li>
+  {% end %}
+  </ul>
+</p>
+{% end %}

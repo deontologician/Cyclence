@@ -22,7 +22,7 @@ import os.path
 from os.path import join as ojoin
 from base64 import urlsafe_b64decode as b64decode
 from uuid import uuid4
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from functools import wraps
 
 from tornado import ioloop, web, auth, escape
@@ -77,7 +77,7 @@ class BaseHandler(web.RequestHandler):
             self._user = self.session.query(orm.User).filter(orm.User.email == email).first()
         return self._user
 
-    def redirect(self, url, permanent=False, status=302):
+    def redirect(self, url, permanent=False, status=303):
         try:
             web.RequestHandler.redirect(self, url.url, permanent, status)
         except AttributeError:
@@ -97,6 +97,8 @@ class CyclenceApp(web.Application):
                                   Tasks,
                                   Task,
                                   NewTask,
+                                  EditTasks,
+                                  EditTask,
                                   ShareTask,
                                   DeleteTask,
                                   Completion,
@@ -236,6 +238,61 @@ class ShareTask(BaseHandler):
             print(str(e))
         finally:
             self.redirect(Tasks)
+
+class EditTasks(BaseHandler):
+    r'''Lists tasks to be edited'''
+
+    url = ojoin(Tasks.url, "edit")
+
+    @web.authenticated
+    @rollback_on_failure
+    def get(self):
+        '''Shows the task edit selection screen'''
+        try:
+            self.render('edittasks.html')
+        except Exception as e:
+            print(str(e))
+
+class EditTask(BaseHandler):
+    r'''Handles editing a task'''
+
+    url = ojoin(Task.url, "edit")
+
+    @web.authenticated
+    @rollback_on_failure
+    def get(self, task_id):
+        '''Shows the form for editing a particular task'''
+        try:
+             task = next(task for task in self.current_user.tasks
+                          if str(task.task_id) == task_id)
+        except Exception as e:
+            self.set_status(404)
+        else:
+            try:
+                self.render('edittask.html', task=task)
+            except Exception as e:
+                print(str(e))
+
+
+    @web.authenticated
+    @rollback_on_failure
+    def post(self, task_id):
+        '''Actually updates the task with the edits'''
+        try:
+            task = self.session.query(orm.Task).filter(orm.Task.task_id == task_id).one()
+        except Exception as e:
+            self.set_status(404)
+        task.name = self.get_argument('taskname', task.name)
+        task.length = timedelta(days=int(self.get_argument('length', task.length)))
+        task.allow_early = self.get_argument('allowearly',
+                                             'on' if task.allow_early else 'off') == 'on'
+        task.points = int(self.get_argument('points', task.points))
+        task.tags = self.get_argument('tags', ', '.join(task.tags)).split(',')
+        notes = self.get_argument('notes', task.notes)
+        self.current_user.notify('message', 'The task {.name} has been updated'.format(task))
+        self.session.commit()
+        self.redirect(Tasks)
+
 
 class DeleteTask(BaseHandler):
 
