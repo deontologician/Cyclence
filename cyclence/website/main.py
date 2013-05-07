@@ -414,6 +414,26 @@ class Invite(BaseHandler):
         self.redirect(Friends)
 
 if __name__ == '__main__':
-    debug = os.getenv('DEBUG', 'false').lower() == 'true'
-    CyclenceApp(debug=debug).listen(int(os.getenv('CYCLENCE_TORNADO_PORT')))
+    from tornado.options import define, options
+    define("worker_id", default=None, help="Worker id, used to determine port "
+           "to listen on")
+    define("debug", default=None, help="debug mode")
+    options.parse_command_line()
+
+    if options.debug is not None:
+        DEBUG = options.debug
+    else:
+        DEBUG = os.getenv('CYCLENCE_DEBUG', 'false').lower() == 'true'
+
+    env_port = os.getenv('CYCLENCE_TORNADO_PORT')
+    if options.worker_id is not None:
+        if env_port is not None:
+            PORT = int(env_port) + int(options.worker_id)
+        else:
+            PORT = 8800 + int(options.worker_id)
+    elif env_port is not None:
+        PORT = int(env_port)
+    else:
+        PORT = 8801
+    CyclenceApp(debug=DEBUG).listen(PORT)
     ioloop.IOLoop.instance().start()

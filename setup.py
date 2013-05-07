@@ -23,10 +23,12 @@ setup(name = 'cyclence'
       ,author = 'Josh Kuhn'
       ,author_email = 'kuhn.joshua+cyclence@gmail.com'
       ,license = 'AGPL3'
-      ,install_requires = ["sqlalchemy",
-                           "tornado",
-                           "psycopg2",
-                           "supervisor"
+      ,install_requires = ["sqlalchemy==0.8.1",
+                           "tornado==3.0",
+                           "psycopg2==2.4.6",
+                           "supervisor==3.0b1",
+                           "fabric==1.6.0",
+                           "mailer==0.7.0",
                            ]
 )
 
