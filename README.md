@@ -1,6 +1,6 @@
 Cyclence
 ==========
-The periodic scheduler
+The recurring task tracker
 
 Introduction
 ----------
